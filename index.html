@@ -159,6 +159,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
 <section id="ueber" class="on">
   <h2>Übersicht &amp; Fahrlogik</h2>
   <p class="sub">Fahrzeiten sind für ein Gespann mit ca. 65 km/h Reisedurchschnitt gerechnet (Luftlinie × 1,35 Umwegfaktor ÷ 65). Vor Abfahrt gegen Google Maps oder ADAC Maps gegenprüfen.</p>
+  <p id="ueber-dates" class="sub" style="color:var(--acc);font-weight:600"></p>
 
   <div class="box">
     <h3 style="margin-top:0">Empfehlung</h3>
@@ -968,6 +969,7 @@ function syncBoxes(){ document.querySelectorAll('#picks input').forEach(i=>i.che
 function renderSeq(){
   const s=document.getElementById('seq');
   saveActive();
+  if(document.getElementById('wx-ziel')) renderWxSelect();
   if(!TOUR.length){ s.innerHTML='<p class="sub">Noch keine Ziele gewählt. „Empfehlung laden“ liefert einen fertigen Vorschlag mit Ziel Aachen.</p>'; renderPlan(); drawMap(); return; }
   s.innerHTML=TOUR.map((t,i)=>{
     const z=byId(t.id);
@@ -1001,11 +1003,13 @@ function planData(){
   return planDataFor(TOUR, document.getElementById('startdate').value);
 }
 function updateHeader(P){
-  const h=document.getElementById('hdr-route');
-  if(!P||!P.length){ h.textContent=''; return; }
+  const h=document.getElementById('hdr-route'), d=document.getElementById('ueber-dates');
+  if(!P||!P.length){ h.textContent=''; if(d)d.textContent=''; return; }
   const nights=P.reduce((s,p)=>s+p.n,0);
   const start=dstr(P[0].an);
+  const last=P[P.length-1], ende=last.n?last.ab:last.an;
   h.textContent=`Aktive Route: ${P.map(p=>p.z.n).join(' → ')} · ${nights} Nächte · Start ${start}`;
+  if(d) d.textContent=`Aktuelle Planung: ${start} bis ${dstr(ende)} · ${nights} Nächte`;
 }
 function renderPlan(){
   const P=planData(), t=document.getElementById('t-plan');
@@ -1133,11 +1137,28 @@ window.addEventListener('hashchange',loadFromHash);
 /* ============ WETTER ============ */
 const WMO={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌦️',63:'🌧️',65:'🌧️',
  71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
-(function(){
+function renderWxSelect(){
   const s=document.getElementById('wx-ziel');
-  Z.forEach(z=>s.add(new Option(z.n,z.id)));
-  s.value='interlaken';
-  s.onchange=loadWx; document.getElementById('wx-go').onclick=loadWx;
+  const prev=s.value;
+  const onRoute=TOUR.map(t=>byId(t.id)).filter(Boolean);
+  const onIds=new Set(onRoute.map(z=>z.id));
+  const rest=Z.filter(z=>!onIds.has(z.id));
+  s.innerHTML='';
+  if(onRoute.length){
+    const g=document.createElement('optgroup'); g.label='Auf deiner Route';
+    onRoute.forEach(z=>g.appendChild(new Option(z.n,z.id)));
+    s.appendChild(g);
+  }
+  const g2=document.createElement('optgroup'); g2.label=onRoute.length?'Weitere Ziele':'Alle Ziele';
+  rest.forEach(z=>g2.appendChild(new Option(z.n,z.id)));
+  s.appendChild(g2);
+  const ids=[...onIds, ...rest.map(z=>z.id)];
+  s.value = ids.includes(prev) ? prev : (onRoute[0]?.id || 'interlaken');
+}
+(function(){
+  renderWxSelect();
+  document.getElementById('wx-ziel').onchange=loadWx;
+  document.getElementById('wx-go').onclick=loadWx;
 })();
 async function loadWx(){
   const z=byId(document.getElementById('wx-ziel').value);
