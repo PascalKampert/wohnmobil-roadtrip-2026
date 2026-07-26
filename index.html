@@ -749,25 +749,6 @@ const W = [
    Reine Zwischenstopps ohne Übernachtung (0 Nächte) sind davon ausgenommen. */
 const MAXNIGHTS = 14;
 const MINNIGHTS = 2;
-const ROUTEN = {
- klassik: {name:'Klassik · 13 Nächte', desc:'Straßburg, Genf/Genfersee, Berner Oberland, Luzern. Wenige Stationen, dafür überall mindestens 2 Nächte Standzeit.',
-  stops:[
-   {id:'giessen', n:0}, {id:'strassburg', n:2}, {id:'vogesen', n:2}, {id:'genf', n:2},
-   {id:'interlaken', n:3}, {id:'kandersteg', n:2}, {id:'luzern', n:2},
-   {id:'titisee', n:0}, {id:'trier', n:0}, {id:'aachen', n:0}]},
-
- sued: {name:'Süd · 13 Nächte · Tessin & Oberitalien', desc:'Straßburg und Genf als Pflichtstationen, danach über das Aostatal und den Lago Maggiore ins Tessin, zurück über den Gotthard ins Berner Oberland. Anfahrt Aosta über Mont-Blanc- oder Grosser-St.-Bernhard-Tunnel (mautpflichtig). Titisee/Trier sind reine Zwischenstopps ohne Übernachtung.',
-  stops:[
-   {id:'giessen', n:0}, {id:'strassburg', n:2}, {id:'genf', n:2}, {id:'aosta', n:2},
-   {id:'lagomaggiore', n:2}, {id:'locarno', n:3}, {id:'interlaken', n:2},
-   {id:'titisee', n:0}, {id:'trier', n:0}, {id:'aachen', n:0}]},
-
- seen: {name:'Seen · 13 Nächte · Oberitalien-Fokus', desc:'Straßburg und Genf als Pflichtstationen, danach Lago Maggiore, Comer See und Vierwaldstättersee. Wenige Basen, dafür überall mindestens 2 Nächte. Titisee/Trier sind reine Zwischenstopps ohne Übernachtung.',
-  stops:[
-   {id:'giessen', n:0}, {id:'strassburg', n:2}, {id:'genf', n:2}, {id:'lagomaggiore', n:2},
-   {id:'comersee', n:3}, {id:'interlaken', n:2}, {id:'luzern', n:2},
-   {id:'titisee', n:0}, {id:'trier', n:0}, {id:'aachen', n:0}]}
-};
 /* Orte, bei denen die Anfahrt über einen Alpenpass oder Tunnel führt */
 const ALPIN = new Set(['aosta','lagomaggiore','ortasee','locarno','verzasca','vallemaggia','lugano','bellinzona','comersee','interlaken','kandersteg','grindelwald']);
 
@@ -836,7 +817,6 @@ function recOptions(){
   Object.entries(store()).forEach(([name,d])=>{
     if(Array.isArray(d.stops)&&d.stops.length) opts.push({key:'saved:'+name,label:name+' (gespeichert)',stops:d.stops});
   });
-  Object.entries(ROUTEN).forEach(([k,r])=>opts.push({key:'preset:'+k,label:r.name,stops:r.stops}));
   return opts;
 }
 function renderRecOptions(){
@@ -1372,15 +1352,20 @@ const DEFAULT_ROUTE={start:'2026-08-02', alp:true, stops:[
   {id:'giessen',n:0},{id:'strassburg',n:2},{id:'colmar',n:2},{id:'besancon',n:1},
   {id:'genf',n:2},{id:'kandersteg',n:2},{id:'luzern',n:1},{id:'lagomaggiore',n:2},
   {id:'locarno',n:1},{id:'titisee',n:1},{id:'aachen',n:0}]};
-(function seedDefault(){
-  const st=store();
-  if(!Object.keys(st).length){
-    st[DEFAULT_ROUTE_NAME]={...DEFAULT_ROUTE, saved:new Date().toISOString()};
-    try{ localStorage.setItem(LSKEY, JSON.stringify(st)); }catch(e){}
-  }
+/* Einmaliger harter Reset: jeder alte Test-/Zwischenstand (egal welcher Browser) wird auf diesem
+   Deploy einmal gelöscht und durch ausschließlich "Erste Idee" ersetzt. RESET_TAG hochzählen,
+   falls nochmal ein harter Reset nötig ist. */
+const RESET_TAG='2026-07-27-erste-idee-only';
+(function hardResetOnce(){
+  if(localStorage.getItem('caravan2026.reset')===RESET_TAG) return;
+  Object.keys(localStorage).filter(k=>k.startsWith('caravan2026.')).forEach(k=>localStorage.removeItem(k));
+  const st={}; st[DEFAULT_ROUTE_NAME]={...DEFAULT_ROUTE, saved:new Date().toISOString()};
+  localStorage.setItem(LSKEY, JSON.stringify(st));
+  localStorage.setItem(ACTIVEKEY, JSON.stringify(DEFAULT_ROUTE));
+  localStorage.setItem('caravan2026.reset', RESET_TAG);
 })();
 renderSaved();            // füllt Fertige-Routenvorschläge-Knöpfe + Empfehlung (rec-pick) aus dem Gespeicherten
-/* Live wiederherstellen: zuletzt bearbeiteter Stand → sonst erste eigene gespeicherte Route → sonst Klassik-Vorlage. */
+/* Live wiederherstellen: zuletzt bearbeiteter Stand → sonst erste eigene gespeicherte Route → sonst "Erste Idee". */
 if(!apply(loadActive())){
   const st=store(), firstSaved=Object.keys(st).sort()[0];
   apply(firstSaved ? st[firstSaved] : DEFAULT_ROUTE);
