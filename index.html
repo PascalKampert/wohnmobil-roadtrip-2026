@@ -233,7 +233,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
         <label style="font-size:12.5px;color:var(--tx2)">Startdatum</label><br>
         <input type="date" id="startdate" value="2026-08-02" style="margin-top:4px;width:100%">
       </div>
-      <div style="margin:0 0 8px"><label style="font-size:12.5px;color:var(--tx2)">Fertige Routenvorschläge</label></div>
+      <div style="margin:0 0 8px"><label style="font-size:12.5px;color:var(--tx2)">Eigene gespeicherte Routen</label></div>
       <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap" id="routebtns"></div>
       <label class="src" style="display:flex;gap:6px;align-items:center;cursor:pointer;margin-bottom:10px">
         <input type="checkbox" id="alpzu" checked style="accent-color:var(--acc)"> Alpen-Zuschlag +30 % auf Bergetappen</label>
@@ -853,10 +853,10 @@ function renderRecommendation(){
   const stops=chosen.stops.map(s=>({id:s.id,nights:+s.n||0}));
   const start=document.getElementById('startdate').value||'2026-08-02';
   const P=planDataFor(stops,start);
-  let rows='<tr><th>#</th><th>Etappe</th><th>Nächte</th><th>Fahrt ab Vorort</th><th>km</th></tr>';
+  let rows='<tr><th>#</th><th>Etappe</th><th>Ankunft</th><th>Abfahrt</th><th>Nächte</th><th>Fahrt ab Vorort</th><th>km</th></tr>';
   P.forEach((p,i)=>{
     const cls=p.h>4?'bad':(p.h>3?'warn':'ok');
-    rows+=`<tr><td>${i+1}</td><td><b>${p.z.n}</b></td><td>${p.n||'–'}</td>
+    rows+=`<tr><td>${i+1}</td><td><b>${p.z.n}</b></td><td>${dstr(p.an)}</td><td>${p.n?dstr(p.ab):'–'}</td><td>${p.n||'–'}</td>
       <td>${p.first?'Start':`<span class="pill ${cls}">${hhmm(p.h)}</span>`}</td><td>${p.first?'–':p.km+' km'}</td></tr>`;
   });
   t.innerHTML=rows;
@@ -949,23 +949,31 @@ let TOUR=[];
     renderSeq();
   };
   const rb=document.getElementById('routebtns');
-  Object.entries(ROUTEN).forEach(([k,r],i)=>{
-    const b=document.createElement('button');
-    b.className='btn g'; b.textContent=r.name; b.dataset.r=k;
-    b.onclick=()=>{
-      rb.querySelectorAll('button').forEach(x=>x.className='btn g');
-      b.className='btn';
-      TOUR=r.stops.map(e=>({id:e.id,nights:e.n}));
-      document.getElementById('routedesc').textContent=r.desc;
-      syncBoxes(); renderSeq();
-    };
-    rb.appendChild(b);
-  });
   document.getElementById('b-clear').onclick=()=>{ TOUR=[]; document.getElementById('routedesc').textContent=''; rb.querySelectorAll('button').forEach(x=>x.className='btn g'); syncBoxes(); renderSeq(); };
   document.getElementById('startdate').onchange=renderSeq;
   document.getElementById('alpzu').onchange=()=>{ saveActive(); renderPlan(); drawMap(); };
 })();
 function syncBoxes(){ document.querySelectorAll('#picks input').forEach(i=>i.checked=TOUR.some(t=>t.id===i.value)); }
+/* "Fertige Routenvorschläge" zeigt eigene gespeicherte Routen statt fester Vorlagen. */
+function renderRouteBtns(){
+  const rb=document.getElementById('routebtns'), st=store(), names=Object.keys(st).sort();
+  rb.innerHTML='';
+  if(!names.length){
+    rb.innerHTML='<span class="src">Noch keine eigenen Routen gespeichert – Ziele wählen, unten benennen und „Speichern“ klicken.</span>';
+    return;
+  }
+  names.forEach(name=>{
+    const b=document.createElement('button');
+    b.className='btn g'; b.textContent=name; b.dataset.r=name;
+    b.onclick=()=>{
+      apply(st[name]);
+      rb.querySelectorAll('button').forEach(x=>x.className='btn g');
+      b.className='btn';
+      document.getElementById('routedesc').textContent=`Gespeicherte Route · ${(st[name].stops||[]).length} Stopps`;
+    };
+    rb.appendChild(b);
+  });
+}
 function renderSeq(){
   const s=document.getElementById('seq');
   saveActive();
@@ -1079,10 +1087,10 @@ function renderSaved(){
     c.querySelectorAll('button').forEach(b=>b.onclick=()=>{
       const st=store();
       if(b.dataset.ld!==undefined){ apply(st[b.dataset.ld])?msg('„'+b.dataset.ld+'“ geladen.'):msg('Konnte nicht geladen werden.',false); }
-      else{ delete st[b.dataset.dl]; localStorage.setItem(LSKEY,JSON.stringify(st)); renderSaved(); renderRecOptions(); renderRecommendation(); msg('Gelöscht.'); }
+      else{ delete st[b.dataset.dl]; localStorage.setItem(LSKEY,JSON.stringify(st)); renderSaved(); renderRecOptions(); renderRecommendation(); renderRouteBtns(); msg('Gelöscht.'); }
     });
   }
-  renderRecOptions(); renderRecommendation();
+  renderRecOptions(); renderRecommendation(); renderRouteBtns();
 }
 document.getElementById('b-save').onclick=()=>{
   const el=document.getElementById('saveName'), name=(el.value||'').trim();
@@ -1355,9 +1363,12 @@ function drawMap(){
 }
 
 /* ============ INIT ============ */
-/* Live wiederherstellen: zuletzt bearbeiteter Stand aus dem Browser, sonst erste Vorlage. */
-if(!apply(loadActive())) document.querySelector('#routebtns button').click();
-renderSaved();            // füllt auch die Empfehlung (rec-pick) auf Basis von Vorlagen + Gespeichertem
+renderSaved();            // füllt Fertige-Routenvorschläge-Knöpfe + Empfehlung (rec-pick) aus dem Gespeicherten
+/* Live wiederherstellen: zuletzt bearbeiteter Stand → sonst erste eigene gespeicherte Route → sonst Klassik-Vorlage. */
+if(!apply(loadActive())){
+  const st=store(), firstSaved=Object.keys(st).sort()[0];
+  apply(firstSaved ? st[firstSaved] : {stops:ROUTEN.klassik.stops});
+}
 loadFromHash();           // Route aus geteiltem Link hat Vorrang, falls vorhanden
 loadWx(); loadFire();
 </script>
