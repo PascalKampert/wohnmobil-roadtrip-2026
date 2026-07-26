@@ -832,10 +832,11 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
    Wird ganz unten in INIT erstmalig gefüllt, weil sie das Speichersystem (store/apply) braucht. */
 const RECKEY='caravan2026.empfehlung';
 function recOptions(){
-  const opts=Object.entries(ROUTEN).map(([k,r])=>({key:'preset:'+k,label:r.name,stops:r.stops}));
+  const opts=[];
   Object.entries(store()).forEach(([name,d])=>{
     if(Array.isArray(d.stops)&&d.stops.length) opts.push({key:'saved:'+name,label:name+' (gespeichert)',stops:d.stops});
   });
+  Object.entries(ROUTEN).forEach(([k,r])=>opts.push({key:'preset:'+k,label:r.name,stops:r.stops}));
   return opts;
 }
 function renderRecOptions(){
@@ -1363,11 +1364,26 @@ function drawMap(){
 }
 
 /* ============ INIT ============ */
+/* Standard-Route für jeden neuen Besucher (noch nie etwas gespeichert): die eigene "Erste Idee".
+   Wird einmalig als gespeicherte Route angelegt, damit sie überall konsistent auftaucht –
+   als aktive Route, unter "Eigene gespeicherte Routen" und als Empfehlung. */
+const DEFAULT_ROUTE_NAME='Erste Idee';
+const DEFAULT_ROUTE={start:'2026-08-02', alp:true, stops:[
+  {id:'giessen',n:0},{id:'strassburg',n:2},{id:'colmar',n:2},{id:'besancon',n:1},
+  {id:'genf',n:2},{id:'kandersteg',n:2},{id:'luzern',n:1},{id:'lagomaggiore',n:2},
+  {id:'locarno',n:1},{id:'titisee',n:1},{id:'aachen',n:0}]};
+(function seedDefault(){
+  const st=store();
+  if(!Object.keys(st).length){
+    st[DEFAULT_ROUTE_NAME]={...DEFAULT_ROUTE, saved:new Date().toISOString()};
+    try{ localStorage.setItem(LSKEY, JSON.stringify(st)); }catch(e){}
+  }
+})();
 renderSaved();            // füllt Fertige-Routenvorschläge-Knöpfe + Empfehlung (rec-pick) aus dem Gespeicherten
 /* Live wiederherstellen: zuletzt bearbeiteter Stand → sonst erste eigene gespeicherte Route → sonst Klassik-Vorlage. */
 if(!apply(loadActive())){
   const st=store(), firstSaved=Object.keys(st).sort()[0];
-  apply(firstSaved ? st[firstSaved] : {stops:ROUTEN.klassik.stops});
+  apply(firstSaved ? st[firstSaved] : DEFAULT_ROUTE);
 }
 loadFromHash();           // Route aus geteiltem Link hat Vorrang, falls vorhanden
 loadWx(); loadFire();
