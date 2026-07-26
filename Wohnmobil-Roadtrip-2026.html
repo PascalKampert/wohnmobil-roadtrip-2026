@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wohnmobil-Roadtrip-Planer 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#0f1418; --bg2:#161d23; --card:#1c252d; --line:#2b3841;
+  --tx:#e8eef2; --tx2:#9fb0bc; --acc:#3fb0a0; --acc2:#e8a33d; --red:#d9534f;
+  --rad:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:0 0 60px}
+a{color:var(--acc)}
+header{padding:26px 22px 18px;background:linear-gradient(160deg,#1b2b30,#0f1418);border-bottom:1px solid var(--line)}
+header h1{font-size:23px;letter-spacing:-.4px}
+header p{color:var(--tx2);font-size:13.5px;margin-top:5px}
+nav{display:flex;gap:4px;flex-wrap:wrap;padding:12px 18px;background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:900}
+nav button{background:transparent;border:1px solid transparent;color:var(--tx2);padding:8px 14px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500}
+nav button:hover{color:var(--tx);background:#202a32}
+nav button.on{background:var(--acc);color:#08201d;border-color:var(--acc);font-weight:650}
+main{padding:22px 18px;max-width:1320px;margin:0 auto}
+section{display:none} section.on{display:block}
+h2{font-size:19px;margin-bottom:6px}
+h3{font-size:16px;margin:22px 0 8px}
+.sub{color:var(--tx2);font-size:13.5px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);overflow:hidden;display:flex;flex-direction:column}
+/* --- Bildergalerie --- */
+.gal{height:210px;position:relative;background:#1a2228;overflow:hidden;flex:0 0 auto}
+.gal .ph{position:absolute;inset:0;display:grid;place-items:center;color:#41525e;font-size:12px;letter-spacing:.5px;text-align:center;padding:10px}
+.gal .fr{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .35s}
+.gal .fr.on{opacity:1}
+.gal .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 7px;font-size:10.6px;color:#dfe;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));z-index:3;pointer-events:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gal .nv{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:30px;height:44px;border:0;cursor:pointer;
+  background:rgba(10,14,17,.5);color:#fff;font-size:17px;line-height:1;opacity:0;transition:opacity .2s}
+.gal:hover .nv{opacity:1}
+.gal .nv.p{left:0;border-radius:0 8px 8px 0}
+.gal .nv.n{right:0;border-radius:8px 0 0 8px}
+.gal .dots{position:absolute;top:8px;right:9px;z-index:4;display:flex;gap:4px}
+.gal .dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.35);display:block;cursor:pointer}
+.gal .dots i.on{background:#fff;width:16px;border-radius:4px}
+.gal .cnt{position:absolute;top:8px;left:9px;z-index:4;background:rgba(10,14,17,.62);color:#cfe;
+  font-size:10.5px;padding:2px 7px;border-radius:20px}
+.card .bd{padding:13px 14px 15px;flex:1;display:flex;flex-direction:column;gap:7px}
+.card h4{font-size:15.5px}
+.card p{font-size:13.3px;color:var(--tx2)}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:auto;padding-top:8px}
+.tag{font-size:11px;background:#25333c;color:#b6cad5;padding:3px 8px;border-radius:20px;border:1px solid #33454f}
+.tag.a{background:#1e3b36;color:#7fd8c6;border-color:#2c5a52}
+.tag.w{background:#3b2f1a;color:#e8c27f;border-color:#5a4728}
+.tag.r{background:#3b2020;color:#eda0a0;border-color:#5c3030}
+.kv{font-size:12.6px;color:var(--tx2);display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #2a3843;padding:3px 0}
+.kv b{color:var(--tx);text-align:right;font-weight:600}
+details.more{margin-top:4px}
+details.more summary{cursor:pointer;font-size:12.5px;color:var(--acc);list-style:none;padding:4px 0}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:'▸ ';}
+details.more[open] summary::before{content:'▾ ';}
+table{width:100%;border-collapse:collapse;font-size:13.4px}
+th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--tx2);font-weight:600;font-size:12.4px;text-transform:uppercase;letter-spacing:.4px}
+.btn{background:var(--acc);color:#08201d;border:0;padding:9px 15px;border-radius:9px;font-weight:650;cursor:pointer;font-size:13.5px}
+.btn.g{background:#26343d;color:var(--tx)}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:650;white-space:nowrap}
+.ok{background:#1e3b36;color:#7fd8c6}.warn{background:#3b2f1a;color:#e8c27f}.bad{background:#3b2020;color:#eda0a0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:16px;margin-bottom:16px}
+.two{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media(max-width:860px){.two{grid-template-columns:1fr}}
+.pick{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;cursor:pointer;font-size:13.5px}
+.pick:hover{background:#212b33}
+.pick input{accent-color:var(--acc);width:16px;height:16px}
+#map,#firemap{height:580px;border-radius:var(--rad);border:1px solid var(--line);background:#101820}
+#firemap{height:480px}
+.leg{display:flex;gap:12px;align-items:center;font-size:12.8px;padding:8px 0;color:var(--tx2);flex-wrap:wrap}
+.seq{display:flex;flex-direction:column;gap:6px}
+.seqrow{display:flex;gap:10px;align-items:center;background:#212b33;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13.3px}
+.seqrow .n{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#08201d;display:grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 auto}
+.seqrow .g{margin-left:auto;display:flex;gap:4px}
+.seqrow button{background:#2d3b45;border:0;color:var(--tx);width:26px;height:26px;border-radius:6px;cursor:pointer}
+.note{font-size:12.2px;color:var(--tx2);border-left:2px solid var(--acc2);padding-left:10px;margin-top:10px}
+.wx{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:7px}
+.wxd{background:#212b33;border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+.wxd .d{font-size:10.6px;color:var(--tx2)}
+.wxd .i{font-size:21px;margin:2px 0}
+.wxd .t{font-size:13px;font-weight:650}
+.wxd .t small{color:var(--tx2);font-weight:400}
+.wxd .p{font-size:10.4px;color:#79b8e0}
+.wxd.est{opacity:.6;border-style:dashed}
+select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px}
+.src{font-size:11.6px;color:var(--tx2)}
+.src a{color:#78c8bb}
+.bar{height:7px;background:#26333c;border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%}
+.seg{display:inline-flex;background:#212b33;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{background:transparent;border:0;color:var(--tx2);padding:6px 13px;border-radius:8px;cursor:pointer;font-size:13px}
+.seg button.on{background:var(--acc);color:#08201d;font-weight:650}
+.mapctl{position:absolute;z-index:800;top:12px;right:12px;background:rgba(22,29,35,.94);border:1px solid var(--line);border-radius:10px;padding:8px}
+.wrapmap{position:relative}
+</style>
+</head>
+<body>
+
+<div id="gate" style="position:fixed;inset:0;z-index:5000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px">
+  <form id="gate-form" style="background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:28px 26px;max-width:340px;width:100%;text-align:center">
+    <h2 style="margin-bottom:6px">Wohnmobil-Roadtrip-Planer 2026</h2>
+    <p class="sub" style="margin-bottom:16px">Passwort erforderlich</p>
+    <input type="password" id="gate-pw" autocomplete="current-password" style="width:100%;background:#212b33;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:10px" placeholder="Passwort">
+    <button type="submit" class="btn" style="width:100%">Öffnen</button>
+    <div id="gate-err" style="color:var(--red);font-size:12.5px;margin-top:10px;min-height:1em"></div>
+  </form>
+</div>
+<script>
+(function(){
+  const HASH='019a33c2dd6c46b7b993f77f05ef45338de415031cc39bcbccfe7db0df1ba1a1';
+  const KEY='caravan2026.gate';
+  const gate=document.getElementById('gate');
+  async function sha256(s){
+    const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  if(sessionStorage.getItem(KEY)==='ok'){ gate.style.display='none'; }
+  document.getElementById('gate-form').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const pw=document.getElementById('gate-pw').value;
+    if(await sha256(pw)===HASH){
+      sessionStorage.setItem(KEY,'ok');
+      gate.style.display='none';
+    }else{
+      document.getElementById('gate-err').textContent='Falsches Passwort.';
+    }
+  });
+})();
+</script>
+
+<header>
+  <h1>Wohnmobil-Roadtrip-Planer 2026</h1>
+  <p>Rhythmus: max. 3–4 h Fahrt, danach mindestens 2 Nächte Standzeit · Trips bis max. 14 Tage · Planungsstand 26.07.2026</p>
+  <p id="hdr-route" class="sub" style="margin-top:6px;color:var(--acc);font-weight:600"></p>
+</header>
+
+<nav>
+  <button class="on" data-t="ueber">Übersicht</button>
+  <button data-t="ziele">Ziele</button>
+  <button data-t="wandern">Wanderungen</button>
+  <button data-t="planer">Tourenplaner</button>
+  <button data-t="wetter">Wetter &amp; Waldbrand</button>
+  <button data-t="karte">Karte</button>
+</nav>
+
+<main>
+
+<!-- ÜBERSICHT -->
+<section id="ueber" class="on">
+  <h2>Übersicht &amp; Fahrlogik</h2>
+  <p class="sub">Fahrzeiten sind für ein Gespann mit ca. 65 km/h Reisedurchschnitt gerechnet (Luftlinie × 1,35 Umwegfaktor ÷ 65). Vor Abfahrt gegen Google Maps oder ADAC Maps gegenprüfen.</p>
+
+  <div class="box">
+    <h3 style="margin-top:0">Empfehlung</h3>
+    <p class="sub" style="margin-bottom:10px">Wählt eine der fertigen Routenvorlagen oder eine im Tourenplaner gespeicherte Route aus – diese Auswahl wird als Empfehlung hier angezeigt und im Browser gemerkt.</p>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <select id="rec-pick"></select>
+      <button class="btn g" id="rec-open">Im Tourenplaner öffnen</button>
+    </div>
+    <table id="t-master"></table>
+    <div id="rec-sum" style="margin-top:12px"></div>
+    <div class="note">Ziel ist immer Aachen, nicht Gießen – deshalb läuft der Rückweg über Elsass/Lothringen, Mosel und Eifel statt über die A5. Trips sind auf max. 14 Tage ausgelegt.</div>
+  </div>
+
+  <div class="grid">
+    <div class="box">
+      <h3 style="margin-top:0">Caravan-Praxis Frankreich</h3>
+      <p class="sub" style="margin:0">Crit'Air-Vignette für die Umweltzonen Straßburg, Lyon und Grenoble nötig (online ca. 4,80 €, Lieferzeit einplanen). Maut: Gespann fällt je nach Gesamthöhe in Klasse 2 oder 3. Aires de camping-car sind flächendeckend vorhanden, Lyon-Innenstadt ist für Caravans nicht befahrbar – Stellplatz Dardilly nutzen und mit Bus 3 hineinfahren. Gasflaschen: deutsche Flaschen werden in FR nicht getauscht, Adapter und Reserve mitnehmen.</p>
+    </div>
+    <div class="box">
+      <h3 style="margin-top:0">Caravan-Praxis Schweiz</h3>
+      <p class="sub" style="margin:0">Autobahnvignette 2026 CHF 40 für das Zugfahrzeug, der Anhänger braucht eine eigene. Gespanne über 3,5 t Gesamtgewicht: 80 km/h auf der Autobahn. Kandersteg: Wohnwagen am Camping Rendez-vous stehen lassen, der Talstations-Parkplatz ist eng und kostenpflichtig. Grindelwald-Zufahrt ist steil, mit Anhänger nur bis zum Camping fahren. Bargeld CHF für Bergbahnen und kleine Käsereien mitnehmen.</p>
+    </div>
+    <div class="box">
+      <h3 style="margin-top:0">Rückweg über Aachen</h3>
+      <p class="sub" style="margin:0">Ab Luzern führt der sinnvollste Weg über Basel, Elsass/Lothringen (Nancy oder Metz), Mosel/Trier und die Eifel nach Aachen. Alternative: Schwarzwald → Straßburg → Luxemburg → Aachen. Luxemburg lohnt sich als Tankstopp: Diesel und LPG dort deutlich günstiger als in DE, FR und CH. Letzte Etappe Trier–Aachen ca. 2 h über die A1/A60.</p>
+    </div>
+    <div class="box">
+      <h3 style="margin-top:0">Kritische Punkte 2026</h3>
+      <p class="sub" style="margin:0">Frankreich meldet zum 25.07. knapp 98.000 ha Brandfläche – historischer Rekord. Betroffen: Gironde/Landes, Var, Pyrénées-Orientales, Fontainebleau. Alle <b>abseits</b> dieser Route. Im Kanton Bern gilt in sechs Verwaltungskreisen Feuerverbot, das Berner Oberland steht auf Stufe „erheblich“ (orange). Details und Karte im Wetter-Tab.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ZIELE -->
+<section id="ziele">
+  <h2>Ziele</h2>
+  <p class="sub">Fotos sind lokal im Ordner „bilder“ hinterlegt (einmalig von Wikipedia geladen), kein Live-Fetch. Klapp „Mehr Details“ auf für Stellplatz, Preise, Schlechtwetter-Alternativen und Einkauf.</p>
+  <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+    <div class="seg" id="kat">
+      <button class="on" data-k="">Alle</button>
+      <button data-k="stadt">Städte &amp; Kultur</button>
+      <button data-k="natur">Natur &amp; Landschaft</button>
+      <button data-k="wandern">Wandern &amp; Seen</button>
+    </div>
+    <select id="f-land"><option value="">Alle Länder</option><option value="DE">Deutschland</option><option value="FR">Frankreich</option><option value="CH">Schweiz</option><option value="IT">Italien</option><option value="LU">Luxemburg</option></select>
+    <span class="src" id="z-count"></span>
+  </div>
+  <div class="grid" id="g-ziele"></div>
+</section>
+
+<!-- WANDERUNGEN -->
+<section id="wandern">
+  <h2>Wanderungen</h2>
+  <p class="sub">Quellen: SchweizMobil (offizielles Wanderland-Netz), Outdooractive und Schweiz Tourismus. Werte mit „ca.“ sind gerundete Richtwerte, alle anderen stammen direkt aus der verlinkten Tourenbeschreibung.</p>
+  <div style="margin-bottom:14px;display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+    <select id="f-ziel"><option value="">Alle Regionen</option></select>
+    <select id="f-grad"><option value="">Alle Schwierigkeiten</option><option>leicht</option><option>mittel</option><option>anspruchsvoll</option></select>
+    <span class="src" id="w-count"></span>
+  </div>
+  <div class="grid" id="g-wandern"></div>
+</section>
+
+<!-- PLANER -->
+<section id="planer">
+  <h2>Tourenplaner</h2>
+  <p class="sub">Ziele auswählen, Reihenfolge sortieren, Standzeit festlegen. Der Planer vergibt Datum ab Startdatum und markiert jede Etappe über 4 h rot. Endziel ist Aachen.</p>
+  <div class="two">
+    <div class="box">
+      <h3 style="margin-top:0">1 · Ziele wählen</h3>
+      <div style="margin:8px 0 12px">
+        <label style="font-size:12.5px;color:var(--tx2)">Startdatum</label><br>
+        <input type="date" id="startdate" value="2026-08-02" style="margin-top:4px;width:100%">
+      </div>
+      <div style="margin:0 0 8px"><label style="font-size:12.5px;color:var(--tx2)">Fertige Routenvorschläge</label></div>
+      <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap" id="routebtns"></div>
+      <label class="src" style="display:flex;gap:6px;align-items:center;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="alpzu" checked style="accent-color:var(--acc)"> Alpen-Zuschlag +30 % auf Bergetappen</label>
+      <div style="margin-bottom:10px"><button class="btn g" id="b-clear">Leeren</button></div>
+      <div id="routedesc" class="src" style="margin-bottom:12px"></div>
+
+      <div style="border-top:1px solid var(--line);padding-top:12px;margin-bottom:12px">
+        <label style="font-size:12.5px;color:var(--tx2)">Eigene Routen speichern</label>
+        <div style="display:flex;gap:6px;margin:6px 0">
+          <input type="text" id="saveName" placeholder="z. B. Route Variante 2" style="flex:1;background:#212b33;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px">
+          <button class="btn" id="b-save">Speichern</button>
+        </div>
+        <div id="savedList"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn g" id="b-export">Als Datei exportieren</button>
+          <button class="btn g" id="b-import">Datei laden</button>
+          <button class="btn g" id="b-link">Link kopieren</button>
+          <input type="file" id="fileIn" accept=".json" style="display:none">
+        </div>
+        <div class="src" id="saveMsg" style="margin-top:7px"></div>
+      </div>
+      <div id="picks" style="max-height:440px;overflow:auto"></div>
+    </div>
+    <div>
+      <div class="box">
+        <h3 style="margin-top:0">2 · Reihenfolge &amp; Standzeiten</h3>
+        <div class="seq" id="seq"></div>
+      </div>
+      <div class="box">
+        <h3 style="margin-top:0">3 · Reiseplan</h3>
+        <table id="t-plan"></table>
+        <div id="plan-sum" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WETTER -->
+<section id="wetter">
+  <h2>Wetter &amp; Waldbrandlage</h2>
+  <p class="sub">Wetter live von der Open-Meteo-API. Die Prognose reicht ca. 16 Tage; für den Zeitraum danach bis 18.08. wird das Klimamittel 2020–2025 (ERA5-Reanalyse) als gestrichelte Kachel gezeigt.</p>
+
+  <div class="box">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <select id="wx-ziel"></select>
+      <button class="btn" id="wx-go">Aktualisieren</button>
+      <span id="wx-stat" class="src"></span>
+    </div>
+    <div id="wx-out" class="sub" style="margin-top:14px">Wird geladen …</div>
+  </div>
+
+  <div class="box">
+    <h3 style="margin-top:0">Waldbrandkarte</h3>
+    <p class="src" style="margin-bottom:10px">Standardmäßig eingeblendet: der amtliche <b>Fire Weather Index</b> von EFFIS/Copernicus (ECMWF-Modell) und aktuelle Satelliten-Hotspots (MODIS/VIIRS) – live vom Copernicus-Server. Kein selbst berechneter Index.</p>
+    <div class="seg" id="fireLayers" style="margin-bottom:10px">
+      <label class="pick" style="padding:6px 13px"><input type="checkbox" id="fw-fwi" checked> EFFIS Fire Weather Index (amtlich)</label>
+      <label class="pick" style="padding:6px 13px"><input type="checkbox" id="fw-hs" checked> Satelliten-Hotspots (amtlich, live)</label>
+    </div>
+    <div class="wrapmap"><div id="firemap"></div></div>
+    <div class="leg">
+      <span><i style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#d9534f"></i> aktuell erkanntes Feuer (NASA FIRMS, 24 h)</span>
+      <span class="src">Kartendaten © OpenStreetMap / CARTO · Fire Weather Index &amp; Hotspots © EFFIS Copernicus EMS</span>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3 style="margin-top:0">Aktuelle Brände in Routennähe</h3>
+    <p class="src" style="margin-bottom:10px">Echte Branderkennungen der letzten 24 Stunden, kein berechneter Index: NASA FIRMS, Satellit Suomi-NPP/VIIRS (375 m Auflösung). Geprüft wird ein Umkreis von 50 km um jedes Ziel dieser Seite.</p>
+    <button class="btn g" id="b-fire-refresh">Aktualisieren</button>
+    <div id="fire-out" class="sub" style="margin-top:14px">Wird geladen …</div>
+  </div>
+
+  <div class="box">
+    <h3 style="margin-top:0">Lagebild Stand 25./26. Juli 2026</h3>
+    <table>
+      <tr><th>Gebiet</th><th>Lage</th><th>Relevanz für diese Route</th></tr>
+      <tr><td>Frankreich gesamt</td><td>Rund 98.000 ha seit Jahresbeginn verbrannt – historischer Rekord laut Innenminister Nuñez.</td><td><span class="pill warn">indirekt</span> Löschflug- und Rettungskapazitäten landesweit gebunden</td></tr>
+      <tr><td>Gironde / Landes (Bordeaux)</td><td>Über 42.000 ha verbrannt, mehr als 220.000 Menschen evakuiert, 18 Gemeinden vollständig geräumt.</td><td><span class="pill ok">nicht auf Route</span> ca. 400 km westlich von Lyon</td></tr>
+      <tr><td>Wald von Fontainebleau</td><td>Aktives Feuer ca. 60 km südöstlich von Paris im UNESCO-Biosphärenreservat.</td><td><span class="pill ok">nicht auf Route</span></td></tr>
+      <tr><td>Var / Pyrénées-Orientales</td><td>Schwere Brände im Sommerverlauf 2026.</td><td><span class="pill ok">nicht auf Route</span> Südfrankreich</td></tr>
+      <tr><td>Kanton Bern</td><td>Feuerverbot in Wald und Waldesnähe (50 m Mindestabstand) in sechs Verwaltungskreisen: Berner Jura, Biel/Bienne, Seeland, Oberaargau, Bern-Mittelland, Emmental.</td><td><span class="pill bad">direkt</span> Anfahrtsweg, kein Grill, kein Lagerfeuer</td></tr>
+      <tr><td>Berner Oberland &amp; Thun</td><td>Gefahrenstufe „erheblich“ (orange). Feuer nur in fest eingerichteten Feuerstellen, bei Wind ganz verzichten.</td><td><span class="pill bad">direkt</span> Interlaken, Kandersteg, Grindelwald</td></tr>
+      <tr><td>Wallis, Graubünden, Tessin</td><td>Kleinflächige Waldbrände; erhöhte Gefahr, die Schweiz entsendet deshalb keine eigenen Kräfte nach Frankreich.</td><td><span class="pill warn">Nachbarregion</span></td></tr>
+    </table>
+    <div class="note">Amtliche Live-Karten vor jeder Etappe prüfen:
+      <a href="https://www.naturgefahren.ch/home/aktuelle-naturgefahren/waldbrand.html" target="_blank">naturgefahren.ch (CH)</a> ·
+      <a href="https://www.naturgefahren.sites.be.ch/de/start/aktuelle-situation/waldbrand.html" target="_blank">Kanton Bern</a> ·
+      <a href="https://forest-fire.emergency.copernicus.eu/" target="_blank">EFFIS/Copernicus (EU)</a> ·
+      <a href="https://firms.modaps.eosdis.nasa.gov/map/" target="_blank">NASA FIRMS Satelliten-Hotspots</a> ·
+      <a href="https://www.meteofrance.com/vigilance" target="_blank">Météo-France Vigilance</a>
+    </div>
+  </div>
+</section>
+
+<!-- KARTE -->
+<section id="karte">
+  <h2>Karte</h2>
+  <p class="sub">Zeigt die im Tourenplaner gewählten Ziele in Reihenfolge mit Datum. Graue Punkte sind verfügbare, aber nicht gewählte Ziele.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+    <div class="seg" id="basemaps"></div>
+    <label class="src" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="showAll" checked style="accent-color:var(--acc)"> nicht gewählte Ziele zeigen</label>
+    <label class="src" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="showHikes" style="accent-color:var(--acc)"> Wanderungen einblenden</label>
+  </div>
+  <div class="wrapmap"><div id="map"></div></div>
+  <div class="leg">
+    <span><i style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#3fb0a0;color:#08201d;text-align:center;font:700 12px/22px sans-serif">1</i> gewählte Etappe</span>
+    <span><i style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#5a6b76"></i> Option</span>
+    <span><i style="display:inline-block;width:26px;height:3px;background:#e8a33d;vertical-align:middle"></i> Fahrtrichtung</span>
+    <span><i style="display:inline-block;width:13px;height:13px;background:#8bd4ff;transform:rotate(45deg)"></i> Wanderung</span>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ============ DATEN ============ */
+const Z = [
+ {id:'giessen', n:'Gießen', land:'DE', kat:'stadt', lat:50.5866, lon:8.6784, wiki:'Gießen', cq:'Giessen Germany', typ:'Start',
+  d:'Ausgangspunkt der Reise. Auffahrt A45 Richtung Südwesten, dann A5. Letzter günstiger Diesel- und Gastank vor Frankreich, Ersatzflasche und AdBlue hier auffüllen.',
+  info:{'Höhe':'155 m','Camping':'Camping Gießen-Kleinlinden','Preis/Nacht':'ca. 22 €','Crit\'Air':'nicht nötig'},
+  more:{'Einkauf':'Große Märkte an der Marburger Straße, sonntags nichts offen','Abfahrt-Tipp':'Vor 8 Uhr los, sonst Stau A5 Frankfurter Kreuz','Anfahrt Straßburg':'A5 durchgehend, Kaiserstuhl-Umfahrung nicht nötig'}},
+
+ {id:'heidelberg', n:'Heidelberg / Neckartal', land:'DE', kat:'stadt', lat:49.3988, lon:8.6724, wiki:'Heidelberg', cq:'Heidelberg castle', typ:'Kurzstopp',
+  d:'Idealer Puffer auf der Hinfahrt, falls die erste Etappe zu lang wird. Schlossruine über der Altstadt, Philosophenweg am Gegenhang, Alte Brücke über den Neckar.',
+  info:{'Höhe':'114 m','Camping':'Camping Haide, Neckargemünd (direkt am Fluss)','Preis/Nacht':'ca. 32 €','Bleibedauer':'1 Nacht reicht'},
+  more:{'ÖPNV':'Bus 35 ab Neckargemünd, ca. 20 Min in die Altstadt','Schlechtwetter':'Kurpfälzisches Museum, Studentenkarzer','Kinder':'Bergbahn zum Königstuhl, Märchenparadies','Baden':'Neckar bei Neckarsteinach, Thermalbad Heidelberg'}},
+
+ {id:'strassburg', n:'Straßburg', land:'FR', kat:'stadt', lat:48.5734, lon:7.7521, wiki:'Straßburg', cq:'Strasbourg cathedral Petite France', typ:'Stadt',
+  d:'Gotisches Münster mit astronomischer Uhr, Fachwerkviertel La Petite France, Europaviertel mit Parlament. Der Camping liegt am Rhein-Rhône-Kanal, mit dem Rad 20 Minuten in die Altstadt – das Gespann bleibt die ganze Zeit stehen.',
+  info:{'Höhe':'142 m','Camping':'Camping de Strasbourg (Montagne-Verte), ganzjährig','Preis/Nacht':'ca. 30–36 €','Crit\'Air':'Stufe 1–3 Pflicht (ZFE)','Bleibedauer':'2 Nächte'},
+  more:{'ÖPNV':'Tram B/F ab Montagne-Verte, Tageskarte ca. 4,60 €','Muss':'Münster-Plattform (332 Stufen), Bootstour auf der Ill, Barrage Vauban','Schlechtwetter':'Musée Alsacien, Palais Rohan, Europaparlament-Besuch (Anmeldung)','Essen':'Flammkuchen und Baeckeoffe in den Winstubs der Rue du Bain-aux-Plantes','Kinder':'Bootstour Batorama, Parc de l\'Orangerie mit Storchengehege','Markt':'Marché Boulevard de la Marne, Mi + Sa vormittags'}},
+
+ {id:'vogesen', n:'Vogesen / Munstertal', land:'FR', kat:'natur', lat:48.0400, lon:7.1300, wiki:'Hohneck', cq:'Hohneck Vosges', typ:'Berge',
+  d:'Route des Crêtes über Hohneck (1363 m) und Grand Ballon (1424 m), eiszeitliche Karseen, Fermes-auberges mit Munsterkäse und Tourtes. Landschaftlich der ruhigste Teil der Hinreise und ein guter Höhen-Übergang vor den Alpen.',
+  info:{'Höhe':'400–1424 m','Camping':'Camping Les Amis de la Nature, Muhlbach-sur-Munster','Preis/Nacht':'ca. 24 €','Achtung':'Route des Crêtes eng und kurvig – keine Anhänger','Bleibedauer':'2 Nächte'},
+  more:{'Muss':'Lac de Fischboedle, Petit Ballon, Col de la Schlucht','Essen':'Ferme-auberge Kahlenwasen oder Uff Rain, Menu Marcaire ca. 25 €','Schlechtwetter':'Käserei Fromagerie Haxaire, Munster-Altstadt','Kinder':'Wildpark Parc du Petit Prince, Affenberg Kintzheim','Baden':'Lac de Kruth-Wildenstein','Achtung 2':'Abends kann es auf 1000 m auf 10 °C fallen – Heizung testen'}},
+
+ {id:'colmar', n:'Colmar / Elsässer Weinstraße', land:'FR', kat:'stadt', lat:48.0794, lon:7.3585, wiki:'Colmar', cq:'Colmar Petite Venise', typ:'Stadt',
+  d:'Fachwerk-Altstadt mit Klein-Venedig, Unterlinden-Museum mit dem Isenheimer Altar. Von hier aus Riquewihr, Eguisheim und Kaysersberg – die schönsten Weindörfer der Region, gut per Rad erreichbar.',
+  info:{'Höhe':'194 m','Camping':'Camping de l\'Ill, Colmar-Horbourg','Preis/Nacht':'ca. 28 €','Fahrzeit ab Straßburg':'ca. 1:00 h','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Isenheimer Altar, Eguisheim (schönstes Dorf Frankreichs), Haut-Koenigsbourg','Radweg':'Véloroute du Vignoble, flach entlang der Weinberge','Schlechtwetter':'Musée Unterlinden, Bartholdi-Museum','Essen':'Winstub Brenner, Cave Vinicole Turckheim für Riesling und Gewürztraminer','Kinder':'Parc du Petit Prince, Schlittenbahn Kaysersberg'}},
+
+ {id:'besancon', n:'Besançon / Doubs-Tal', land:'FR', kat:'stadt', lat:47.2378, lon:6.0241, wiki:'Besançon', cq:'Besancon citadelle', typ:'Stadt',
+  d:'Vauban-Zitadelle hoch über der Doubs-Schleife, UNESCO-Welterbe. Kompakte Altstadt, wenig Touristen, ideal als Halbtages-Zwischenhalt auf dem Weg Elsass → Lyon.',
+  info:{'Höhe':'250 m','Camping':'Camping de Besançon-Chalezeule','Preis/Nacht':'ca. 26 €','Bleibedauer':'1 Nacht'},
+  more:{'Muss':'Citadelle Vauban mit Zoo und Museen (Ticket ca. 13 €), Doubs-Uferweg, Uhrenmuseum','Schlechtwetter':'Musée du Temps, Museum der Schönen Künste (ältestes Frankreichs)','Kinder':'Zoo in der Zitadelle, Bootsfahrt durch den Tunnel unter der Zitadelle','Essen':'Comté-Käse und Vin Jaune aus dem Jura'}},
+
+ {id:'beaune', n:'Beaune / Burgund', land:'FR', kat:'stadt', lat:47.0227, lon:4.8378, wiki:'Beaune', cq:'Hospices de Beaune', typ:'Kultur',
+  d:'Hôtel-Dieu mit dem berühmten Buntziegeldach, Weinkeller der Côte de Beaune. Der Radweg Voie des Vignes führt flach durch die Grand-Cru-Lagen von Pommard bis Meursault.',
+  info:{'Höhe':'220 m','Camping':'Camping Municipal Les Cent Vignes','Preis/Nacht':'ca. 25 €','Bleibedauer':'1 Nacht','Alternative zu':'Besançon (westlichere Route nach Lyon)'},
+  more:{'Muss':'Hospices de Beaune, Radtour Pommard–Volnay–Meursault','Wein':'Marché aux Vins in der alten Kirche, Verkostung ca. 20 €','Schlechtwetter':'Hôtel-Dieu, Moutarderie Fallot Senfmuseum','Kinder':'Bergwerksbahn und Kartbahn Beaune, Parc de la Bouzaize'}},
+
+ {id:'lyon', n:'Lyon', land:'FR', kat:'stadt', lat:45.7640, lon:4.8357, wiki:'Lyon', cq:'Lyon Fourviere Vieux Lyon', typ:'Stadt',
+  d:'Vieux Lyon mit den versteckten Traboules-Durchgängen, Fourvière-Basilika über der Stadt, Halles Paul Bocuse. Kulinarisch die stärkste Station der Reise. Gespann unbedingt außerhalb stellen.',
+  info:{'Höhe':'170 m','Camping':'Camping Indigo Lyon (Dardilly), Bus 3 in die Stadt','Preis/Nacht':'ca. 34–42 €','Crit\'Air':'Pflicht, ZFE Lyon','Bleibedauer':'2 Nächte'},
+  more:{'ÖPNV':'Bus 3 ab Dardilly bis Hôtel de Ville, Tageskarte TCL ca. 6,60 €','Muss':'Traboules in Vieux Lyon, Standseilbahn Fourvière, Presqu\'île, Parc de la Tête d\'Or','Essen':'Bouchons Lyonnais – Quenelles, Andouillette, Praline-Tarte; Halles Paul Bocuse','Schlechtwetter':'Musée des Confluences, Musée des Beaux-Arts, Miniatur- und Filmmuseum','Kinder':'Parc de la Tête d\'Or mit Zoo (Eintritt frei), Aquarium','Achtung':'Sommerhitze, Lyon regelmäßig über 35 °C – Klimaanlage oder Schattenplatz buchen'}},
+
+ {id:'pilat', n:'Parc du Pilat', land:'FR', kat:'natur', lat:45.4000, lon:4.6000, wiki:'Regionaler Naturpark Pilat', cq:'Crêt de l\'Oeillon Pilat', typ:'Natur',
+  d:'Bewaldetes Mittelgebirge direkt südlich von Lyon. Der Crêt de l\'Œillon (1370 m) bietet bei Föhnlage Sicht bis zum Mont Blanc. Deutlich kühler und ruhiger als die Stadt – gute Ausweichoption bei Hitzewelle.',
+  info:{'Höhe':'400–1432 m','Camping':'Camping de la Croix du Sud, Pélussin','Preis/Nacht':'ca. 22 €','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Crêt de l\'Œillon, Gorges du Ternay, Panoramastraße Col de l\'Œillon','Essen':'Rigotte de Condrieu (Ziegenkäse AOP), Weine von Condrieu und Côte-Rôtie','Kinder':'Baden im Barrage de la Rive, Naturlehrpfade','Radfahren':'Viarhôna-Radweg entlang der Rhône, komplett flach'}},
+
+ {id:'bourget', n:'Lac du Bourget / Chambéry', land:'FR', kat:'wandern', lat:45.5646, lon:5.9178, wiki:'Lac du Bourget', cq:'Lac du Bourget Hautecombe', typ:'See',
+  d:'Größter natürlicher See Frankreichs, eingerahmt von Dent du Chat und Mont Revard. Abtei Hautecombe am Westufer, Kurstadt Aix-les-Bains. Spürbar ruhiger und günstiger als Annecy.',
+  info:{'Höhe':'231 m','Camping':'Camping International du Sierroz, Aix-les-Bains','Preis/Nacht':'ca. 30 €','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Dent du Chat, Abbaye de Hautecombe, Bootsfahrt über den See','Baden':'Plage municipale Aix-les-Bains, Wassertemperatur im August ca. 23 °C','Schlechtwetter':'Thermes Chevalley, Musée Faure','Kinder':'Aquapark, Tretboote, Seilbahn Mont Revard'}},
+
+ {id:'annecy', n:'Annecy', land:'FR', kat:'wandern', lat:45.8992, lon:6.1294, wiki:'Annecy', cq:'Annecy lake old town', typ:'See',
+  d:'Der klarste Bergsee Europas, türkisfarben und im August auf ca. 24 °C. Ein 40 km langer autofreier Radweg führt komplett rundherum. Altstadt mit Kanälen und dem Palais de l\'Isle. Im August sehr voll – Campings unbedingt vorab buchen.',
+  info:{'Höhe':'447 m','Camping':'Camping Le Belvédère (städtisch) oder La Ravoire, Doussard','Preis/Nacht':'ca. 35–48 €','Bleibedauer':'2 Nächte','Buchung':'zwingend im Voraus'},
+  more:{'Muss':'Radweg Voie Verte rund um den See, Roc de Chère, Plage d\'Albigny','Baden':'Plage d\'Albigny (gratis), Plage de Menthon, Plage de Doussard','Essen':'Tartiflette, Reblochon, Fischspezialität Féra aus dem See','Schlechtwetter':'Château d\'Annecy, Palais de l\'Isle, Musée du Film d\'Animation','Kinder':'Tretboote, Wasserpark Doussard, Sommerrodelbahn Semnoz','Achtung':'Innenstadt-Parken mit Gespann unmöglich, Rad oder Bus 1 nutzen'}},
+
+ {id:'genf', n:'Genf', land:'CH', kat:'stadt', lat:46.2044, lon:6.1432, wiki:'Genf', cq:'Geneva Jet d\'Eau', typ:'Stadt',
+  d:'Jet d\'Eau mit 140 m Fontäne, UNO-Viertel mit dem Broken Chair, Altstadt um die Kathedrale St-Pierre. Campinggäste erhalten meist die Geneva Transport Card, damit ist der gesamte Nahverkehr kostenlos.',
+  info:{'Höhe':'375 m','Camping':'Camping Pointe à la Bise / Camping de Vésenaz','Preis/Nacht':'ca. CHF 45','Vignette':'ab hier CH-Vignette Pflicht (CHF 40 + Anhänger)','Bleibedauer':'1–2 Nächte'},
+  more:{'ÖPNV':'Geneva Transport Card gratis bei Übernachtung, inkl. Bus, Tram und Mouettes-Boote','Muss':'Jet d\'Eau, Palais des Nations (Führung), Bains des Pâquis Seebad, Blumenuhr','Schlechtwetter':'Rotkreuz-Museum, Patek-Philippe-Museum, MAMCO','Kinder':'Seebad Bains des Pâquis, Parc des Bastions mit Riesenschach','Achtung':'Genf ist teuer – im französischen Supermarkt vorher einkaufen (Ferney-Voltaire)','Baden':'Genfersee an den Bains des Pâquis, im August ca. 22 °C'}},
+
+ {id:'lavaux', n:'Lavaux / Lausanne', land:'CH', kat:'wandern', lat:46.5197, lon:6.6323, wiki:'Lavaux', cq:'Lavaux vineyard terraces', typ:'Wein',
+  d:'UNESCO-Weinterrassen zwischen Lausanne und Vevey, steil über dem Genfersee mit Blick auf die Savoyer Alpen. Landschaftlich das Highlight der Westschweiz und nur eine knappe Stunde von Genf.',
+  info:{'Höhe':'375–900 m','Camping':'Camping de Vidy, Lausanne (direkt am See)','Preis/Nacht':'ca. CHF 48','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Terrassenweg Lutry–St-Saphorin, Chexbres „Balkon des Genfersees“, Schloss Chillon','Essen':'Chasselas-Weine der Winzer in Epesses und Dézaley, Filets de perche','Schlechtwetter':'Olympisches Museum Lausanne, Kathedrale, Collection de l\'Art Brut','Kinder':'Lavaux Express Touristenbähnchen, Baden am Camping Vidy','ÖPNV':'S-Bahn ab Lausanne alle 30 Min entlang der Terrassen – ideal für Einweg-Wanderung'}},
+
+ {id:'creuxduvan', n:'Creux du Van / Val de Travers', land:'CH', kat:'natur', lat:46.9333, lon:6.7333, wiki:'Creux du Van', cq:'Creux du Van', typ:'Natur',
+  d:'Felsarena von einem Kilometer Durchmesser mit fast senkrechten Kalkwänden von 160 m Höhe. Steinböcke und Gämsen an den Kanten, im August früh morgens angenehm kühl. Der ungewöhnlichste Ort der Reise.',
+  info:{'Höhe':'750–1463 m','Camping':'Camping de Noiraigue / Camping Les Cluds','Preis/Nacht':'ca. CHF 30','Bleibedauer':'1 Nacht','Achtung':'keine Absperrung an der Kante'},
+  more:{'Muss':'Aussichtskante Le Soliat, Ferme Robert am Fuß der Arena','Wildtiere':'Steinbock-Kolonie ganzjährig, beste Sichtung am frühen Morgen','Essen':'Absinthe-Destillerien im Val de Travers, Maison de l\'Absinthe Môtiers','Kinder':'nur bedingt – ungesicherte Abbruchkante, Kleinkinder anleinen','Alternative':'Chasseral oder Neuenburger Seeufer bei Regen'}},
+
+ {id:'gruyeres', n:'Gruyères / Freiburger Voralpen', land:'CH', kat:'stadt', lat:46.5836, lon:7.0797, wiki:'Gruyères', cq:'Gruyeres castle village', typ:'Dorf',
+  d:'Autofreies Burgstädtchen auf einem Hügel, Käserei La Maison du Gruyère im Tal, Moléson (2002 m) als Hausberg. Sehr gute Zwischenetappe zwischen Genfersee und Berner Oberland.',
+  info:{'Höhe':'810 m','Camping':'Camping Les Sapins, Charmey / TCS Gruyères','Preis/Nacht':'ca. CHF 38','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Schloss Gruyères, Moléson-Gipfel per Standseilbahn, Cailler-Schokoladenfabrik in Broc','Essen':'Fondue moitié-moitié, Doppelrahm mit Meringues aus Gruyères','Schlechtwetter':'HR-Giger-Museum (Alien-Designer), Schokoladenfabrik, Schaukäserei','Kinder':'Schokoladenfabrik mit Verkostung, Sommerrodelbahn Moléson, Thermalbad Charmey','Tipp':'Frühmorgens im Dorf, ab 10 Uhr kommen die Busgruppen'}},
+
+ {id:'interlaken', n:'Interlaken', land:'CH', kat:'wandern', lat:46.6863, lon:7.8632, wiki:'Interlaken', cq:'Interlaken Harder Kulm', typ:'Basis',
+  d:'Die zentrale Basis zwischen Thuner- und Brienzersee. Von hier gehen alle Bahnen ab: Harder Kulm, Schynige Platte, Jungfraujoch, First. Für drei bis vier Nächte Standzeit der beste Platz der ganzen Reise.',
+  info:{'Höhe':'568 m','Camping':'Camping Lazy Rancho 4 oder Manor Farm, Unterseen','Preis/Nacht':'ca. CHF 50–58','Bleibedauer':'3 Nächte','Buchung':'im August zwingend vorab'},
+  more:{'Muss':'Harder Kulm bei Sonnenuntergang, Schifffahrt Brienzersee nach Iseltwald, St. Beatus-Höhlen','Bahnen':'Jungfraujoch ca. CHF 210 hin/zurück – nur bei garantiert klarem Wetter buchen','Gästekarte':'meist ÖPNV im Berner Oberland inklusive, am Camping erfragen','Schlechtwetter':'St. Beatus-Höhlen, Trümmelbachfälle, Freilichtmuseum Ballenberg','Kinder':'Ballenberg, Schifffahrt, Rodelbahn Oeschinen, Aare-Schlauchboot','Essen':'Älplermagronen, Berner Platte; Migros und Coop in Interlaken für günstigen Einkauf','Baden':'Brienzersee bei Bönigen (kalt, ca. 18 °C), Thunersee bei Neuhaus wärmer'}},
+
+ {id:'grindelwald', n:'Grindelwald / Lauterbrunnen', land:'CH', kat:'wandern', lat:46.6242, lon:8.0414, wiki:'Grindelwald', cq:'Grindelwald Eiger north face', typ:'Berge',
+  d:'Die Eiger-Nordwand steht direkt über dem Dorf. Die First-Bahn führt zum Bachalpsee, dem meistfotografierten Bergsee der Schweiz. Nebenan das Lauterbrunnental mit 72 Wasserfällen und dem Staubbachfall.',
+  info:{'Höhe':'1034 m','Camping':'Camping Eigernordwand / Camping Jungfrau, Lauterbrunnen','Preis/Nacht':'ca. CHF 45–55','Achtung':'Zufahrt steil, mit Anhänger nur bis zum Camping','Bleibedauer':'2 Nächte oder Tagesausflug ab Interlaken'},
+  more:{'Muss':'Bachalpsee, Trümmelbachfälle, autofreies Mürren, First Cliff Walk','Bahnen':'Grindelwald First ca. CHF 72, Schilthorn ca. CHF 108 hin/zurück','Schlechtwetter':'Trümmelbachfälle (im Berg, wetterunabhängig), Gletscherschlucht Grindelwald','Kinder':'First Flieger, Mountain Cart, Trottibike – Kombiticket lohnt sich','Achtung 2':'Wetterumschwünge kommen im Hochsommer sehr schnell, Regenjacke immer mit'}},
+
+ {id:'kandersteg', n:'Kandersteg / Oeschinensee', land:'CH', kat:'wandern', lat:46.4948, lon:7.6737, wiki:'Oeschinensee', cq:'Oeschinensee Kandersteg', typ:'See',
+  d:'UNESCO-Welterbe-See auf 1578 m unter der 2000 m hohen Wand von Blüemlisalp und Doldenhorn. Gondel ab Kandersteg, danach 20 Minuten flacher Fußweg. Das visuelle Highlight der gesamten Reise.',
+  info:{'Höhe':'1176 m (Dorf) / 1578 m (See)','Camping':'Camping Rendez-vous Kandersteg','Preis/Nacht':'ca. CHF 42','Gondel':'ca. CHF 32 hin/zurück','Bleibedauer':'2 Nächte'},
+  more:{'Muss':'Oeschinensee-Rundweg, Gasterntal, Sommerrodelbahn an der Bergstation','Tipp':'Vor 9 Uhr hochfahren – ab 10 Uhr wird es sehr voll und die Gondel staut','Baden':'Oeschinensee ist ganzjährig unter 15 °C, nur für Hartgesottene','Schlechtwetter':'Autoverlad Kandersteg–Goppenstein ins Wallis, Thermalbad Leukerbad','Kinder':'Rodelbahn, Ruderboote auf dem See, flacher Uferweg','Achtung':'Wohnwagen am Camping lassen, Talstations-Parkplatz eng und kostenpflichtig','Wandern':'Rundweg ist alpin – Schwindelfreiheit nötig, Alternative ist der Uferweg'}},
+
+ /* ---------- TESSIN ---------- */
+ {id:'verzasca', n:'Verzascatal / Lavertezzo', land:'CH', kat:'natur', lat:46.2578, lon:8.8353, wiki:'Verzasca', cq:'Ponte dei Salti Lavertezzo Verzasca', typ:'Fluss',
+  d:'Das türkisgrüne Wasser der Verzasca fließt über weiß polierte Gneisfelsen, überspannt von der doppelbogigen Steinbrücke Ponte dei Salti aus dem 17. Jahrhundert. Landschaftlich der spektakulärste Flusslauf der Alpen und ein völlig anderer Charakter als das Berner Oberland.',
+  info:{'Höhe':'536 m','Camping':'Camping Riarena, Cugnasco / Campofelice, Tenero','Preis/Nacht':'ca. CHF 45–62','Bleibedauer':'2 Nächte','Achtung':'Talstraße eng, Gespann im Tal abstellen'},
+  more:{'Muss':'Ponte dei Salti, Sentiero Verzasca, Staumauer Contra (Bungee aus GoldenEye)','Baden':'Gumpen bei Lavertezzo, Wasser aber eiskalt (12–15 °C) und stark strömend','Achtung 2':'Tödliche Unfälle durch Sprünge und plötzliche Pegelanstiege – markierte Zonen einhalten','Parken':'Lavertezzo ab 9 Uhr voll, kostenpflichtig; früh kommen','Essen':'Grotti mit Polenta, Merlot del Ticino, Zincarlin-Käse','Kinder':'flache Uferabschnitte bei Brione, nicht bei Lavertezzo'}},
+
+ {id:'vallemaggia', n:'Vallemaggia / Val Bavona', land:'CH', kat:'natur', lat:46.3167, lon:8.5000, wiki:'Valle Bavona', cq:'Foroglio waterfall Val Bavona', typ:'Tal',
+  d:'Zwölf Steinweiler zwischen haushohen Felsblöcken, ohne Stromanschluss bis heute. Hinter dem Dorf Foroglio stürzt ein Wasserfall 110 m in die Tiefe. Das archaischste Tal der Schweiz und deutlich ruhiger als das Verzascatal.',
+  info:{'Höhe':'440–1200 m','Camping':'Camping Piccolo Paradiso, Avegno','Preis/Nacht':'ca. CHF 40','Bleibedauer':'1–2 Nächte','Achtung':'Val Bavona nur mit Zugfahrzeug, kein Anhänger'},
+  more:{'Muss':'Wasserfall Foroglio, Steinweiler Sonlerto und Sabbione, Seilbahn Robiei','Essen':'Grotto Froda in Foroglio direkt am Wasserfall','Kinder':'Weg durch die Weiler ist flach und familientauglich','Baden':'Naturgumpen der Maggia bei Ponte Brolla','Schlechtwetter':'Museo di Valmaggia Cevio, Locarno','Tipp':'Val Calnègia oberhalb Foroglio ist der schönste Teil, aber steil'}},
+
+ {id:'locarno', n:'Locarno / Ascona', land:'CH', kat:'wandern', lat:46.1712, lon:8.7994, wiki:'Locarno', cq:'Locarno Piazza Grande Lago Maggiore', typ:'See',
+  d:'Piazza Grande, Wallfahrtskirche Madonna del Sasso über der Stadt, subtropische Palmenpromenade am Lago Maggiore. Von hier die Seilbahn auf Cardada-Cimetta mit Blick über See und Alpen. Wärmster Ort der Schweiz.',
+  info:{'Höhe':'196 m','Camping':'Camping Campofelice, Tenero (größter Camping Europas, direkt am See)','Preis/Nacht':'ca. CHF 55–75','Bleibedauer':'2–3 Nächte','Buchung':'im August zwingend Monate vorher'},
+  more:{'Muss':'Madonna del Sasso per Standseilbahn, Cardada-Cimetta, Ascona-Seepromenade, Brissago-Inseln','Baden':'Lido Locarno, Lago Maggiore im August ca. 24 °C – wärmstes Wasser der Reise','Essen':'Grotti mit Polenta e brasato, Risotto, Merlot; Mercato Locarno donnerstags','Schlechtwetter':'Falconeria, Museo Casorella, Termali Salini Locarno','Kinder':'Lido mit Rutschen, Brissago-Inseln per Schiff, Falknerei','Klima':'im August regelmäßig über 32 °C mit hoher Luftfeuchte – Schattenplatz und Klimaanlage einplanen'}},
+
+ {id:'lugano', n:'Lugano / Luganersee', land:'CH', kat:'wandern', lat:46.0037, lon:8.9511, wiki:'Lugano', cq:'Lugano Monte San Salvatore lake', typ:'See',
+  d:'Mediterrane Seestadt zwischen den Zuckerhut-Bergen Monte Brè und San Salvatore, beide per Standseilbahn erreichbar. Dazu die Fischerdörfer Gandria und Morcote am Ufer, nur per Schiff oder Fußweg erreichbar.',
+  info:{'Höhe':'273 m','Camping':'TCS Camping Lugano-Muzzano / Camping Golfo del Sole, Agno','Preis/Nacht':'ca. CHF 50','Bleibedauer':'2 Nächte'},
+  more:{'Muss':'Monte San Salvatore, Monte Brè, Gandria per Schiff, Morcote mit Parco Scherrer','Baden':'Lido di Lugano, Luganersee im August ca. 25 °C','Schlechtwetter':'LAC Kunstmuseum, Schokoladenmuseum Alprose, Swissminiatur Melide','Kinder':'Swissminiatur, Standseilbahnen, Schifffahrt','Essen':'Grotto Descanso, Ticinella; italienische Küche zu Schweizer Preisen','Tipp':'Italienische Grenze 10 Min – Einkauf in Como oder Ponte Tresa deutlich günstiger'}},
+
+ {id:'bellinzona', n:'Bellinzona', land:'CH', kat:'stadt', lat:46.1944, lon:9.0175, wiki:'Bellinzona', cq:'Castelgrande Bellinzona castles', typ:'Stadt',
+  d:'Drei mittelalterliche Burgen mit Wehrmauer quer durchs Tal, UNESCO-Welterbe. Castelgrande, Montebello und Sasso Corbaro sind über Wehrgänge verbunden. Der beste Kulturhalt im Tessin und deutlich ruhiger als die Seeorte.',
+  info:{'Höhe':'238 m','Camping':'Camping Bellinzona / Camping Riarena, Cugnasco','Preis/Nacht':'ca. CHF 38','Bleibedauer':'1 Nacht'},
+  more:{'Muss':'Castelgrande mit Lift im Fels, Montebello, Sasso Corbaro; Kombiticket ca. CHF 28','Markt':'Samstagsmarkt in der Altstadt, einer der schönsten der Schweiz','Schlechtwetter':'Burgmuseen, Villa dei Cedri','Kinder':'Burgen mit Wehrgängen zum Klettern, Freibad Bellinzona','Lage':'zentraler Knoten – Verzasca, Vallemaggia, Locarno und Lugano je unter 40 Min'}},
+
+ /* ---------- OBERITALIEN ---------- */
+ {id:'lagomaggiore', n:'Lago Maggiore / Stresa', land:'IT', kat:'wandern', lat:45.8845, lon:8.5378, wiki:'Stresa', cq:'Isola Bella Borromean Islands Stresa', typ:'See',
+  d:'Belle-Époque-Kurort am Westufer mit den Borromäischen Inseln direkt vorgelagert: Isola Bella mit Terrassengarten, Isola Madre mit Botanischem Garten, Isola dei Pescatori als Fischerdorf. Seilbahn auf den Mottarone mit Blick auf sieben Seen.',
+  info:{'Höhe':'200 m','Camping':'Camping Solcio, Lesa / Camping Isolino, Verbania','Preis/Nacht':'ca. 38–48 €','Bleibedauer':'2 Nächte','Maut':'ab CH über Gotthard oder Simplon'},
+  more:{'Muss':'Isola Bella (Eintritt ca. 20 €), Isola dei Pescatori, Mottarone-Seilbahn, Villa Taranto Verbania','Baden':'Lido di Stresa, Lago Maggiore im August ca. 25 °C','Essen':'Risotto al pesce persico, Gorgonzola aus Novara, Nebbiolo-Weine','Schlechtwetter':'Villa Pallavicino, Palazzo Borromeo, Museo del Paesaggio','Kinder':'Alpyland-Rodelbahn am Mottarone, Bootsfahrten, Villa Pallavicino Tierpark','Achtung':'Uferstraße SS33 eng und im August stark befahren – früh fahren'}},
+
+ {id:'ortasee', n:'Lago d\'Orta / Orta San Giulio', land:'IT', kat:'wandern', lat:45.7960, lon:8.4030, wiki:'Ortasee', cq:'Orta San Giulio island lake Orta', typ:'See',
+  d:'Der stillste der oberitalienischen Seen, mit dem mittelalterlichen Inselchen San Giulio in der Mitte und dem UNESCO-Sacro Monte über dem Dorf. Kein Massentourismus, deutlich günstiger als Como und der beste Ort der Reise für zwei ruhige Tage.',
+  info:{'Höhe':'290 m','Camping':'Camping Orta / Camping Punta di Crabbia, Pettenasco','Preis/Nacht':'ca. 32 €','Bleibedauer':'2 Nächte','Tipp':'ruhigste und günstigste Alternative zum Comer See'},
+  more:{'Muss':'Isola San Giulio per Boot, Sacro Monte mit 20 Kapellen (UNESCO), Piazza Motta','Baden':'Lido di Gozzano, Wasser sauber und im August ca. 24 °C','Essen':'Tapulone (Eselsragout), Toma-Käse, Weine aus dem Novarese','Kinder':'Bootsfahrt zur Insel, Miniaturbahn Ortasee, Baden','Schlechtwetter':'Sacro Monte Kapellen, Museo di Arte Sacra'}},
+
+ {id:'comersee', n:'Comer See / Varenna – Bellagio', land:'IT', kat:'wandern', lat:45.9803, lon:9.2570, wiki:'Comer See', cq:'Varenna Bellagio Lake Como', typ:'See',
+  d:'Steilufer mit Villen, Zypressen und den drei Seearmen. Varenna und Bellagio liegen an der Gabelung und sind per Fähre verbunden. Villa Carlotta und Villa del Balbianello gehören zu den schönsten Gärten Europas.',
+  info:{'Höhe':'199 m','Camping':'Camping Le Vele, Domaso / Camping Spiaggia d\'Oro, Dongo (Nordufer)','Preis/Nacht':'ca. 40–55 €','Bleibedauer':'2 Nächte','Achtung':'Uferstraße SS36 und SS340 sehr eng, Gespann nur am Nordufer'},
+  more:{'Muss':'Villa del Balbianello, Villa Carlotta, Fähre Varenna–Bellagio–Menaggio','Baden':'Nordufer bei Domaso und Gravedona, Wasser im August ca. 24 °C','Wassersport':'Domaso ist Kitesurf- und Windsurf-Zentrum mit verlässlichem Thermikwind','Essen':'Missoltini (getrockneter Seefisch), Pizzoccheri, Valtellina-Weine','Schlechtwetter':'Villen mit Innenräumen, Seidenmuseum Como','Achtung 2':'Bellagio und Varenna im August extrem voll, mit Gespann nicht anfahrbar – Fähre nutzen'}},
+
+ {id:'aosta', n:'Aostatal / Gran Paradiso', land:'IT', kat:'natur', lat:45.7372, lon:7.3206, wiki:'Aostatal', cq:'Gran Paradiso Valnontey Cogne', typ:'Berge',
+  d:'Ältester Nationalpark Italiens, gegründet als königliches Jagdrevier zum Schutz des Steinbocks. Cogne und das Valnontey sind die klassischen Zugänge, dazu römische Ruinen in Aosta selbst und der Blick auf Matterhorn und Mont Blanc.',
+  info:{'Höhe':'583 m (Aosta) / 1534 m (Cogne)','Camping':'Camping Lo Stambecco, Valnontey / Camping Aosta','Preis/Nacht':'ca. 30 €','Bleibedauer':'2 Nächte','Anfahrt':'ab Annecy über Mont-Blanc-Tunnel, Gespann-Maut ca. 90 € einfach'},
+  more:{'Muss':'Rifugio Vittorio Sella, Cascate di Lillaz, Römisches Theater Aosta, Skyway Monte Bianco','Wildtiere':'Steinböcke und Gämsen im Valnontey fast garantiert, beste Zeit früh morgens','Essen':'Fontina-Käse, Carbonade, Genepì-Likör','Schlechtwetter':'Forte di Bard mit Alpenmuseum, Thermen Pré-Saint-Didier','Kinder':'Cascate di Lillaz (flacher Weg), Alpengarten Paradisia, Skyway-Drehgondel','Alternative Anfahrt':'Grosser St. Bernhard Tunnel ab Martigny, günstiger als Mont Blanc'}},
+
+ {id:'turin', n:'Turin', land:'IT', kat:'stadt', lat:45.0703, lon:7.6869, wiki:'Turin', cq:'Turin Mole Antonelliana Piazza', typ:'Stadt',
+  d:'Barocke Arkadenstadt mit Alpenpanorama, Mole Antonelliana mit dem Filmmuseum, Ägyptisches Museum mit der zweitgrößten Sammlung weltweit. Deutlich weniger Touristen als Mailand oder Florenz.',
+  info:{'Höhe':'239 m','Camping':'Camping Villaggio Verde, Rivoli / Area Sosta Torino','Preis/Nacht':'ca. 30 €','Bleibedauer':'1–2 Nächte','ZTL':'Innenstadt gesperrt, Gespann außerhalb lassen'},
+  more:{'Muss':'Museo Egizio, Mole Antonelliana mit Panorama-Lift, Piazza San Carlo, Basilica di Superga','ÖPNV':'Metro und Tram ab Rivoli, Tageskarte ca. 4,50 €','Essen':'Bicerin, Gianduiotti, Vitello tonnato, Barolo aus den nahen Langhe','Schlechtwetter':'Museo Egizio und Filmmuseum füllen zwei Regentage','Kinder':'Filmmuseum, Zahnradbahn nach Superga, Parco del Valentino','Achtung':'im August sehr heiß und viele Läden geschlossen (Ferragosto)'}},
+
+ {id:'luzern', n:'Luzern / Vierwaldstättersee', land:'CH', kat:'stadt', lat:47.0502, lon:8.3093, wiki:'Luzern', cq:'Lucerne Kapellbrücke', typ:'Stadt',
+  d:'Kapellbrücke, Löwendenkmal, Pilatus und Rigi. Der natürliche erste Halt auf dem Rückweg vom Berner Oberland Richtung Norden, mit dem schönsten Camping direkt am Seeufer.',
+  info:{'Höhe':'435 m','Camping':'Camping Lido Luzern, direkt am See mit Strandbad','Preis/Nacht':'ca. CHF 50','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Pilatus Goldene Rundfahrt (Schiff, Zahnradbahn, Seilbahn), Verkehrshaus, Altstadt','Schlechtwetter':'Verkehrshaus der Schweiz mit Planetarium – bester Regentag-Ort der Reise','Kinder':'Verkehrshaus, Schifffahrt mit Raddampfer, Gletschergarten mit Spiegellabyrinth','Baden':'Strandbad Lido direkt am Camping, im August ca. 22 °C','Essen':'Luzerner Chügelipastete, Rathaus Brauerei'}},
+
+ {id:'rheinfall', n:'Rheinfall / Schaffhausen', land:'CH', kat:'natur', lat:47.6779, lon:8.6152, wiki:'Rheinfall', cq:'Rhine Falls Schaffhausen', typ:'Natur',
+  d:'Größter Wasserfall Europas nach Wassermenge, im August auf gutem Pegel. Kurzer, sehr lohnender Stopp – allerdings auf der östlichen Rückreiseroute und nur sinnvoll, wenn man über Bodensee/Stuttgart fährt.',
+  info:{'Höhe':'358 m','Camping':'Camping Rheinwiesen, Langwiesen','Preis/Nacht':'ca. CHF 34','Bleibedauer':'1 Nacht','Hinweis':'Umweg bei Ziel Aachen – nur als Alternative'},
+  more:{'Muss':'Felsenaufstieg auf den Mittelfelsen, Bootsfahrt (ca. CHF 12), Munot Schaffhausen','Kinder':'Adventure Park, Bootsfahrt bis in die Gischt','Schlechtwetter':'Museum zu Allerheiligen, IWC-Uhrenmuseum'}},
+
+ {id:'titisee', n:'Titisee / Feldberg', land:'DE', kat:'natur', lat:47.9036, lon:8.1533, wiki:'Titisee', cq:'Titisee Black Forest', typ:'Natur',
+  d:'Südschwarzwald mit dem Feldberg (1493 m), der Wutachschlucht und dem Schluchsee. Sehr caravan-freundliche Infrastruktur, deutsche Preise nach zwei Wochen Schweiz eine spürbare Erleichterung.',
+  info:{'Höhe':'846 m','Camping':'Camping Bankenhof oder Weiherhof, Titisee','Preis/Nacht':'ca. 32 €','Bleibedauer':'1–2 Nächte','Gästekarte':'KONUS – ÖPNV im ganzen Schwarzwald gratis'},
+  more:{'Muss':'Feldberg-Steig, Wutachschlucht, Ravennaschlucht mit Viadukt','Baden':'Titisee ca. 21 °C im August, Strandbad und Tretboote; Schluchsee größer und ruhiger','Schlechtwetter':'Badeparadies Schwarzwald Titisee, Uhrenmuseum Furtwangen','Kinder':'Steinwasenpark, Sommerrodelbahn Gutach, Badeparadies','Essen':'Schwarzwälder Schinken, Kirschtorte; günstig einkaufen bei Edeka Titisee'}},
+
+ {id:'freiburg', n:'Freiburg im Breisgau', land:'DE', kat:'stadt', lat:47.9990, lon:7.8421, wiki:'Freiburg im Breisgau', cq:'Freiburg Munster', typ:'Stadt',
+  d:'Münster mit dem schönsten Turm der Christenheit, die Bächle in den Gassen, Schauinslandbahn. Wärmste Stadt Deutschlands – im August mit Vorsicht zu genießen.',
+  info:{'Höhe':'278 m','Camping':'Camping Hirzberg (Altstadtnähe) oder Möslepark','Preis/Nacht':'ca. 30 €','Bleibedauer':'1 Nacht'},
+  more:{'Muss':'Münsterturm, Münstermarkt (Mo–Sa vormittags), Schauinslandbahn','Schlechtwetter':'Augustinermuseum, Museum für Neue Kunst','Kinder':'Schauinslandbahn, Steinwasenpark, Baden im Opfinger See','Essen':'Lange Rote am Münstermarkt, badische Weine vom Kaiserstuhl','Achtung':'regelmäßig über 35 °C im August – Schattenplatz buchen'}},
+
+ {id:'nancy', n:'Nancy / Lothringen', land:'FR', kat:'stadt', lat:48.6921, lon:6.1844, wiki:'Nancy', cq:'Place Stanislas Nancy', typ:'Stadt',
+  d:'Place Stanislas, einer der schönsten Plätze Europas und UNESCO-Welterbe, dazu das Jugendstil-Erbe der École de Nancy. Auf dem Rückweg nach Aachen der logische erste Halt nach dem Elsass.',
+  info:{'Höhe':'212 m','Camping':'Camping de Brabois, Villers-lès-Nancy','Preis/Nacht':'ca. 24 €','Bleibedauer':'1 Nacht','Fahrzeit nach Trier':'ca. 2:15 h'},
+  more:{'Muss':'Place Stanislas mit vergoldeten Gittern, Parc de la Pépinière, Villa Majorelle','Schlechtwetter':'Musée de l\'École de Nancy (Jugendstil), Musée des Beaux-Arts mit Daum-Glassammlung','Kinder':'Zoo Parc de la Pépinière (gratis), Aquarium','Essen':'Macarons de Nancy, Bergamotte-Bonbons, Quiche Lorraine','ÖPNV':'Tram 1 ab Brabois direkt zum Zentrum'}},
+
+ {id:'luxemburg', n:'Luxemburg-Stadt', land:'LU', kat:'stadt', lat:49.6116, lon:6.1319, wiki:'Luxemburg (Stadt)', cq:'Luxembourg city Grund', typ:'Stadt',
+  d:'Festungsstadt über den Schluchten von Alzette und Petrusse, UNESCO-Welterbe. Der gesamte öffentliche Nahverkehr im ganzen Land ist kostenlos. Bester Tankstopp der Reise.',
+  info:{'Höhe':'305 m','Camping':'Camping Bon Accueil, Alzingen / Camping Kockelscheuer','Preis/Nacht':'ca. 26 €','Bleibedauer':'1 Nacht','Tanken':'Diesel und LPG deutlich günstiger als DE/FR/CH'},
+  more:{'ÖPNV':'landesweit komplett kostenlos, auch für Touristen','Muss':'Bock-Kasematten, Chemin de la Corniche („schönster Balkon Europas“), Grund-Viertel','Schlechtwetter':'MUDAM Museum für moderne Kunst, Nationalmuseum','Kinder':'Kasematten-Tunnel, Aufzug zum Grund, Parc Merveilleux Bettembourg','Ausflug':'Müllerthal („Kleine Luxemburger Schweiz“) mit Felslandschaft, 30 Min entfernt'}},
+
+ {id:'trier', n:'Trier / Mosel', land:'DE', kat:'stadt', lat:49.7596, lon:6.6441, wiki:'Trier', cq:'Porta Nigra Trier', typ:'Stadt',
+  d:'Älteste Stadt Deutschlands mit acht römischen UNESCO-Denkmälern: Porta Nigra, Kaiserthermen, Amphitheater. Dazu das Moseltal mit den steilsten Weinbergen Europas.',
+  info:{'Höhe':'137 m','Camping':'Camping Treviris (fußläufig zur Altstadt) / Camping Schoo Mosel','Preis/Nacht':'ca. 28 €','Bleibedauer':'1 Nacht','Fahrzeit nach Aachen':'ca. 2:00 h'},
+  more:{'Muss':'Porta Nigra, Kaiserthermen, Amphitheater, Dom; Kombiticket Antikencard ca. 18 €','Mosel':'Bernkastel-Kues, Calmont-Klettersteig, Moselschleife Bremm','Schlechtwetter':'Rheinisches Landesmuseum, Karl-Marx-Haus','Kinder':'Amphitheater-Keller, Moselschifffahrt, Spielplatz Palastgarten','Essen':'Riesling von der Mosel, Trierer Viez (Apfelwein)'}},
+
+ {id:'aachen', n:'Aachen', land:'DE', kat:'stadt', lat:50.7753, lon:6.0839, wiki:'Aachen', cq:'Aachen Cathedral', typ:'Ziel',
+  d:'Endpunkt der Reise. Karlsdom als erstes deutsches UNESCO-Welterbe, Rathaus am Markt, Elisenbrunnen mit Thermalquellen. Direkt vor der Haustür liegt das Hohe Venn – ein guter letzter Wandertag.',
+  info:{'Höhe':'173 m','Camping':'Campingplatz Aachen-Kupferhof / Reisemobilhafen Aachen','Preis/Nacht':'ca. 24 €','Ankunft':'letzte Etappe ab Trier ca. 2:00 h'},
+  more:{'Muss':'Karlsdom mit Oktogon und Barbarossaleuchter, Domschatzkammer, Rathaus, Elisenbrunnen','Wandern':'Hohes Venn (Belgien, 20 Min), Eifelsteig, Dreiländerpunkt Vaals','Schlechtwetter':'Carolus Thermen, Couven-Museum, Ludwig Forum','Essen':'Aachener Printen, Reisfladen; Nobis Printen am Markt','Kinder':'Carolus Thermen, Tierpark Euregiozoo, Dreiländerpunkt mit Labyrinth'}}
+];
+
+const W = [
+ {id:'h-odile', zid:'strassburg', n:'Mont Sainte-Odile Rundweg', reg:'Elsass', lat:48.4381, lon:7.4047,
+  km:'ca. 9 km', h:'ca. 3:00 h', up:'ca. 450 hm', grad:'mittel', wiki:'Odilienberg', cq:'Mont Sainte-Odile',
+  d:'Vom Kloster über die geheimnisvolle Heidenmauer – eine 10 km lange keltische Trockenmauer aus unbekannter Zeit – durch Buchenwald und zurück über den Felsenpfad. Beste Kombination aus Kultur und Wald in Reichweite von Straßburg.',
+  q:'Club Vosgien / Visit Alsace', url:'https://www.visit.alsace/de/'},
+
+ {id:'h-hohneck', zid:'vogesen', n:'Le Hohneck ab Metzeral/Steinabruck', reg:'Vogesen', lat:48.0369, lon:7.0011,
+  km:'21,6 km', h:'7:35 h', up:'1166 hm', grad:'anspruchsvoll', wiki:'Hohneck', cq:'Hohneck Vosges',
+  d:'Große Tagesrunde über Lac de Fischboedle, Kerbholz, Lac d\'Altenweiher und Tagweidle zum Hohneck (1363 m), dem dritthöchsten Gipfel der Vogesen. Rückweg am Lac de Schiessroth vorbei.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/route/wanderung/elsass/vogesen-von-steinabruck-metzeral-auf-le-hohneck/125798688/'},
+
+ {id:'h-ballon', zid:'vogesen', n:'Grand Ballon und Lac du Ballon', reg:'Vogesen', lat:47.9017, lon:7.1000,
+  km:'ca. 8 km', h:'ca. 2:30 h', up:'ca. 300 hm', grad:'leicht', wiki:'Grand Ballon', cq:'Grand Ballon Vosges',
+  d:'Kurze Runde ab dem Parkplatz auf dem höchsten Gipfel der Vogesen (1424 m) hinunter zum Lac du Ballon. Bei klarer Sicht reicht der Blick bis zu den Berner Alpen.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/en/route/hiking-trail/elsass/grand-ballon-and-lac-du-ballon/1523187/'},
+
+ {id:'h-doubs', zid:'besancon', n:'Citadelle und Doubs-Schleife', reg:'Franche-Comté', lat:47.2308, lon:6.0286,
+  km:'ca. 7 km', h:'ca. 2:15 h', up:'ca. 250 hm', grad:'leicht', wiki:'Zitadelle von Besançon', cq:'Citadelle Besancon',
+  d:'Stadtwanderung rund um die Flussschleife, hinauf zur Vauban-Zitadelle (UNESCO) und über den Uferweg zurück durch die Altstadt. Auch bei Hitze machbar, weil größtenteils beschattet.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/besancon/'},
+
+ {id:'h-oeillon', zid:'pilat', n:'Crêt de l\'Œillon', reg:'Pilat', lat:45.4092, lon:4.6161,
+  km:'ca. 11 km', h:'ca. 4:00 h', up:'ca. 600 hm', grad:'mittel', wiki:'Regionaler Naturpark Pilat', cq:'Cret de l\'Oeillon',
+  d:'Aufstieg zum markanten Sendeturm-Gipfel (1370 m) über dem Rhônetal. Bei klarer Luft Panorama über das gesamte Rhônetal, die Alpen und den Mont Blanc.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/parc-naturel-regional-du-pilat/'},
+
+ {id:'h-veyrier', zid:'annecy', n:'Mont Veyrier Rundtour', reg:'Annecy', lat:45.9067, lon:6.1750,
+  km:'9,8 km', h:'ca. 4:30 h', up:'1031 hm', grad:'anspruchsvoll', wiki:'Mont Veyrier', cq:'Mont Veyrier Annecy',
+  d:'Gratweg über den Kalkfelsen, der von Annecy aus die Ostseite des Sees dominiert. Vom Col des Sauts fällt der Blick über den gesamten türkisfarbenen See bis zu den Bauges.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderwege/lac-d-annecy/wandern-in-lac-d-annecy/189014292/'},
+
+ {id:'h-angon', zid:'annecy', n:'Cascade d\'Angon und Ermitage St-Germain', reg:'Annecy', lat:45.8442, lon:6.2103,
+  km:'ca. 6 km', h:'ca. 2:15 h', up:'ca. 350 hm', grad:'leicht', wiki:'Talloires', cq:'Cascade d\'Angon',
+  d:'Schattiger Waldweg ab Talloires zu Wasserfall und Gletschertöpfen, mit einem Stahlbalkon direkt hinter dem Fall. Die perfekte Hitzewanderung, weil fast durchgehend am Wasser.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/bout-du-lac-d-annecy/wanderungen-in-bout-du-lac-d-annecy/316238403/'},
+
+ {id:'h-bourget', zid:'bourget', n:'Dent du Chat ab Le Bourget-du-Lac', reg:'Lac du Bourget', lat:45.6928, lon:5.8231,
+  km:'ca. 10 km', h:'ca. 4:30 h', up:'ca. 900 hm', grad:'anspruchsvoll', wiki:'Dent du Chat', cq:'Dent du Chat',
+  d:'Steiler Aufstieg zum markanten Felszahn (1390 m) hoch über dem größten natürlichen See Frankreichs. Ganzer See, Chambéry und bei guter Sicht der Mont Blanc im Blick.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/lac-du-bourget/'},
+
+ {id:'h-lavaux', zid:'lavaux', n:'Terrassenweg Lutry – St-Saphorin', reg:'Lavaux', lat:46.4939, lon:6.6800,
+  km:'ca. 11 km', h:'ca. 3:15 h', up:'ca. 380 hm', grad:'leicht', wiki:'Lavaux', cq:'Lavaux vineyard',
+  d:'Durch die UNESCO-Weinterrassen hoch über dem Genfersee, mit Blick auf die Savoyer Alpen. Unterwegs Winzerkeller und Bahnhöfe, dadurch beliebig abkürzbar und als Einweg-Tour ideal.',
+  q:'SchweizMobil Wanderland', url:'https://schweizmobil.ch/de/wanderland'},
+
+ {id:'h-creux', zid:'creuxduvan', n:'Sentier du Creux du Van', reg:'Jura', lat:46.9339, lon:6.7286,
+  km:'15,6 km', h:'ca. 4:00 h Laufzeit', up:'750 hm', grad:'anspruchsvoll', wiki:'Creux du Van', cq:'Creux du Van',
+  d:'Rundtour im Val de Travers zum natürlichen Amphitheater von 1 km Durchmesser. An der höchsten Stelle fallen die Kalkwände fast 200 m senkrecht ab. Langer Aufstieg, teils steiler Abstieg.',
+  q:'SchweizMobil Route 286 / Schweiz Tourismus', url:'https://schweizmobil.ch/de/wanderland/route-286'},
+
+ {id:'h-contours', zid:'creuxduvan', n:'Sentier des 14 Contours ab Noiraigue', reg:'Jura', lat:46.9575, lon:6.7256,
+  km:'14 km', h:'ca. 4:30 h', up:'600 hm', grad:'mittel', wiki:'Noiraigue', cq:'Noiraigue',
+  d:'Die klassische, gleichmäßiger ansteigende Variante zum Creux du Van über 14 Kehren. Einkehr in der Ferme Robert am Fuß der Arena, oft mit Steinbock-Sichtung.',
+  q:'Schweiz Tourismus', url:'https://www.myswitzerland.com/de-ch/erlebnisse/creux-du-van-rundtour-im-val-de-travers/'},
+
+ {id:'h-moleson', zid:'gruyeres', n:'Moléson – Plan-Francey Abstieg', reg:'Freiburger Voralpen', lat:46.5533, lon:7.0197,
+  km:'ca. 7 km', h:'ca. 2:45 h', up:'ca. 100 hm auf / 900 hm ab', grad:'mittel', wiki:'Moléson', cq:'Moleson mountain',
+  d:'Mit der Standseilbahn auf den Moléson (2002 m), dann zu Fuß über Plan-Francey nach Gruyères hinunter. Rundblick von den Berner Alpen über den Genfersee bis zum Jura.',
+  q:'SchweizMobil Wanderland', url:'https://schweizmobil.ch/de/wanderland'},
+
+ {id:'h-harder', zid:'interlaken', n:'Interlaken Ost – Harder Kulm', reg:'Interlaken', lat:46.6947, lon:7.8756,
+  km:'ca. 5,5 km', h:'ca. 2:30 h', up:'754 hm', grad:'mittel', wiki:'Harder Kulm', cq:'Harder Kulm',
+  d:'Steiler Anstieg durch den schattigen Harderwald zum Hausberg von Interlaken (1322 m) mit der bekannten Aussichtsplattform über Thuner- und Brienzersee. Abstieg bequem mit der Standseilbahn.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/en/route/hiking-trail/ferienregion-interlaken/interlaken-ost-harder-kulm/23429685/'},
+
+ {id:'h-schynige', zid:'interlaken', n:'Schynige Platte – Faulhorn – First', reg:'Jungfrauregion', lat:46.6558, lon:7.9067,
+  km:'ca. 16 km', h:'ca. 6:00 h', up:'ca. 1000 hm', grad:'anspruchsvoll', wiki:'Faulhorn', cq:'Faulhorn Bachalpsee',
+  d:'Die klassische Höhenwanderung des Berner Oberlands: 9 km durchgehend bergauf zum Faulhorn (2681 m) mit dem ältesten Berggasthaus der Alpen, dann am Bachalpsee vorbei hinunter nach First. Ganztags Eiger, Mönch und Jungfrau im Blick. Nicht für Kinder geeignet, teils sehr steil.',
+  q:'Outdooractive / Jungfrau Region', url:'https://www.outdooractive.com/de/route/wanderung/ferienregion-interlaken/schynige-platte-faulhorn-first/124473874/'},
+
+ {id:'h-bachalp', zid:'grindelwald', n:'First – Bachalpsee', reg:'Grindelwald', lat:46.6669, lon:8.0233,
+  km:'ca. 6 km hin und zurück', h:'ca. 2:00 h', up:'ca. 180 hm', grad:'leicht', wiki:'Bachalpsee', cq:'Bachalpsee',
+  d:'Der einfachste Weg zum berühmtesten Spiegelbild der Schweiz: ab der Bergstation First auf breitem Weg zum Bachalpsee, der bei Windstille Schreckhorn und Wetterhorn spiegelt. Familientauglich.',
+  q:'Outdooractive / Jungfrau Region', url:'https://jungfrauregion.swiss/'},
+
+ {id:'h-trummel', zid:'grindelwald', n:'Lauterbrunnen – Trümmelbachfälle – Stechelberg', reg:'Lauterbrunnental', lat:46.5806, lon:7.9092,
+  km:'ca. 7 km', h:'ca. 2:00 h', up:'ca. 120 hm', grad:'leicht', wiki:'Trümmelbachfälle', cq:'Trummelbach Falls',
+  d:'Flacher Talweg durch das Tal der 72 Wasserfälle, vorbei am Staubbachfall zu den im Berg tosenden Trümmelbachfällen. Auch bei Regen oder großer Hitze gut machbar.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/lauterbrunnen/'},
+
+ {id:'h-oesch-rund', zid:'kandersteg', n:'Oeschinensee-Rundweg (Panoramarunde)', reg:'Kandersteg', lat:46.5000, lon:7.7250,
+  km:'13,7 km', h:'knapp 7:00 h', up:'450 hm', grad:'anspruchsvoll', wiki:'Oeschinensee', cq:'Oeschinensee',
+  d:'Anspruchsvolle alpine Umrundung mit beeindruckendem Panorama über See und Blüemlisalp. <b>Schwindelfreiheit und absolute Trittsicherheit erforderlich, Absturzgefahr.</b> Per Gondel abkürzbar, unterwegs Einkehrmöglichkeiten.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/route/bergtour/adelboden-kandersteg/oeschinensee-rundweg/104275686/'},
+
+ {id:'h-oesch-kurz', zid:'kandersteg', n:'Kandersteg – Oeschinensee (Seeweg)', reg:'Kandersteg', lat:46.4948, lon:7.6737,
+  km:'ca. 4,5 km', h:'ca. 1:30 h', up:'ca. 400 hm', grad:'mittel', wiki:'Oeschinensee', cq:'Oeschinensee lake',
+  d:'Direkter Aufstieg vom Dorf zum See auf 1578 m. Alternativ mit der Gondel und ab Bergstation nur 20 Minuten flach – der einfachste Weg zum UNESCO-Welterbe-See.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/route/wanderung/kandersteg/kandersteg-oeschinensee/102826836/'},
+
+ {id:'h-heuberg', zid:'kandersteg', n:'Heuberg-Runde am Oeschinensee', reg:'Kandersteg', lat:46.5061, lon:7.7092,
+  km:'ca. 11 km', h:'ca. 4:30 h', up:'ca. 700 hm', grad:'anspruchsvoll', wiki:'Oeschinensee', cq:'Oeschinensee Bluemlisalp',
+  d:'Bergwanderung über den Heuberg mit Tiefblick auf den See – die aussichtsreichere und etwas kürzere Alternative zur vollen Umrundung.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/route/wandern/adelboden-kandersteg/heuberg-runde-am-oeschinensee/45874222/'},
+
+ /* ---------- TESSIN ---------- */
+ {id:'h-verzasca', zid:'verzasca', n:'Sentiero Verzasca Etappe 1: Sonogno – Lavertezzo', reg:'Tessin', lat:46.3475, lon:8.7856,
+  km:'ca. 15 km', h:'ca. 4:30 h', up:'ca. 150 hm auf / 570 hm ab', grad:'leicht', wiki:'Verzasca', cq:'Sentiero Verzasca Lavertezzo',
+  d:'Offizielle SchweizMobil-Route 74, Schwierigkeit T2. Alter Saumpfad am türkisgrünen Fluss entlang, durch Birken- und Lärchenwald, über Torfwiesen und zwischen Brione und Lavertezzo vorbei an dreißig Skulpturen und Landschaftsinstallationen. Endet an der Ponte dei Salti. Postauto zurück.',
+  q:'SchweizMobil Route 74, Etappe 1', url:'https://schweizmobil.ch/de/wanderland/route-74/etappe-1'},
+
+ {id:'h-calnegia', zid:'vallemaggia', n:'Foroglio – Calnègia – Foroglio', reg:'Vallemaggia', lat:46.3792, lon:8.4956,
+  km:'ca. 6 km', h:'ca. 2:30 h', up:'ca. 400 hm', grad:'mittel', wiki:'Valle Bavona', cq:'Val Calnegia Foroglio',
+  d:'Über die steilen Steinstufen neben dem donnernden 110-m-Wasserfall hinauf nach Puntid, wo sich das Val Calnègia öffnet: ein langes grünes Tal zwischen Felswänden mit drei Sommeralpen. Einkehr im Grotto Froda direkt am Fall.',
+  q:'Outdooractive / Ascona-Locarno', url:'https://www.outdooractive.com/en/route/hiking-trail/ascona-locarno/foroglio-calnegia-foroglio/33120527/'},
+
+ {id:'h-bavona', zid:'vallemaggia', n:'Talweg Val Bavona: Sonlerto – Foroglio – Bignasco', reg:'Vallemaggia', lat:46.3556, lon:8.5089,
+  km:'ca. 12 km', h:'ca. 3:30 h', up:'ca. 100 hm auf / 480 hm ab', grad:'leicht', wiki:'Valle Bavona', cq:'Val Bavona Sonlerto stone village',
+  d:'Familientaugliche Talwanderung vorbei an historischen Steinweilern, die zwischen haushohen Felsblöcken stehen. Zwischenstopp am Wasserfall von Foroglio, Ende in Bignasco. Postauto zurück.',
+  q:'Schweiz Tourismus / Ascona-Locarno', url:'https://www.ascona-locarno.com/en/explore/vallemaggia/valle-bavona'},
+
+ {id:'h-cardada', zid:'locarno', n:'Cimetta – Cima della Trosa – Cardada', reg:'Locarno', lat:46.1961, lon:8.7947,
+  km:'ca. 6 km', h:'ca. 2:30 h', up:'ca. 250 hm auf / 450 hm ab', grad:'mittel', wiki:'Cardada', cq:'Cardada Cimetta Locarno view',
+  d:'Gipfelwanderung hoch über dem Lago Maggiore mit Blick vom tiefsten Punkt der Schweiz (See, 193 m) bis zur Dufourspitze. Auf- und Abstieg per Seilbahn ab Orselina, dazwischen der Aussichtssteg von Mario Botta.',
+  q:'Outdooractive / Ascona-Locarno', url:'https://www.ascona-locarno.com/en/what-to-do/outdoor/hiking'},
+
+ {id:'h-sansalvatore', zid:'lugano', n:'Monte San Salvatore – Carona – Morcote', reg:'Luganersee', lat:45.9783, lon:8.9231,
+  km:'ca. 9 km', h:'ca. 3:00 h', up:'ca. 120 hm auf / 870 hm ab', grad:'mittel', wiki:'Monte San Salvatore', cq:'Monte San Salvatore Lugano panorama',
+  d:'Mit der Standseilbahn auf den Zuckerhut von Lugano (912 m), dann über den Grat nach Carona und hinunter ins Fischerdorf Morcote am Südzipfel des Sees. Rückfahrt per Schiff oder Bus.',
+  q:'SchweizMobil Wanderland', url:'https://schweizmobil.ch/de/wanderland'},
+
+ {id:'h-bre', zid:'lugano', n:'Monte Brè – Olivenweg nach Gandria', reg:'Luganersee', lat:46.0111, lon:8.9878,
+  km:'ca. 6 km', h:'ca. 2:00 h', up:'ca. 60 hm auf / 650 hm ab', grad:'leicht', wiki:'Monte Brè', cq:'Gandria Lugano olive trail',
+  d:'Vom Gipfel des Monte Brè (925 m) hinunter durch Olivenhaine ins autofreie Fischerdorf Gandria am Seeufer. Der Sentiero dell\'Olivo erklärt an Tafeln den Olivenanbau am Luganersee. Rückfahrt per Schiff.',
+  q:'SchweizMobil Wanderland', url:'https://schweizmobil.ch/de/wanderland'},
+
+ {id:'h-bellinzona', zid:'bellinzona', n:'Drei-Burgen-Weg Bellinzona', reg:'Tessin', lat:46.1928, lon:9.0225,
+  km:'ca. 5 km', h:'ca. 2:00 h', up:'ca. 300 hm', grad:'leicht', wiki:'Burgen von Bellinzona', cq:'Castelgrande Montebello Sasso Corbaro',
+  d:'Verbindungsweg zwischen Castelgrande, Montebello und Sasso Corbaro entlang der Wehrmauer Murata. UNESCO-Welterbe, gut auch als Halbtagestour bei durchwachsenem Wetter.',
+  q:'Schweiz Tourismus', url:'https://www.myswitzerland.com/de-ch/erlebnisse/drei-burgen-von-bellinzona/'},
+
+ /* ---------- OBERITALIEN ---------- */
+ {id:'h-mottarone', zid:'lagomaggiore', n:'Mottarone-Gipfel und Alpyland', reg:'Lago Maggiore', lat:45.8756, lon:8.4000,
+  km:'ca. 8 km', h:'ca. 3:00 h', up:'ca. 450 hm', grad:'mittel', wiki:'Mottarone', cq:'Mottarone summit view lakes',
+  d:'Vom Mittelstation-Parkplatz auf den Mottarone (1491 m). Bei klarer Sicht überblickt man sieben Seen, die Poebene und den Monte Rosa. Abstieg alternativ mit der Seilbahn nach Stresa.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/lago-maggiore/'},
+
+ {id:'h-sacromonte', zid:'ortasee', n:'Sacro Monte di Orta Rundweg', reg:'Lago d\'Orta', lat:45.7947, lon:8.4136,
+  km:'ca. 5 km', h:'ca. 1:45 h', up:'ca. 180 hm', grad:'leicht', wiki:'Sacro Monte di Orta', cq:'Sacro Monte di Orta chapels',
+  d:'Zwanzig Kapellen aus dem 16. und 17. Jahrhundert auf einem bewaldeten Hügel über dem Ortasee, UNESCO-Welterbe. Immer wieder Ausblicke auf die Insel San Giulio. Schattig und auch an Hitzetagen machbar.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/lago-d-orta/'},
+
+ {id:'h-viandante', zid:'comersee', n:'Sentiero del Viandante: Varenna – Bellano', reg:'Comer See', lat:46.0106, lon:9.2833,
+  km:'ca. 9 km', h:'ca. 3:00 h', up:'ca. 450 hm', grad:'mittel', wiki:'Comer See', cq:'Sentiero del Viandante Varenna',
+  d:'Historischer Saumpfad hoch über dem Ostufer, mit ständigem Tiefblick auf den See und die Halbinsel Bellagio. Endet an der Schlucht Orrido di Bellano. Rückfahrt bequem per Regionalzug.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/comer-see/'},
+
+ {id:'h-greenway', zid:'comersee', n:'Greenway del Lago di Como: Colonno – Griante', reg:'Comer See', lat:45.9686, lon:9.1653,
+  km:'ca. 10 km', h:'ca. 3:00 h', up:'ca. 250 hm', grad:'leicht', wiki:'Comer See', cq:'Greenway Lago di Como Lenno',
+  d:'Flacher Uferweg durch Dörfer, Olivenhaine und Villengärten am Westufer, vorbei an der Villa del Balbianello. Der einfachste und schattigste Weg, den Comer See zu Fuß zu erleben.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/comer-see/'},
+
+ {id:'h-sella', zid:'aosta', n:'Rifugio Vittorio Sella ab Valnontey', reg:'Gran Paradiso', lat:45.5981, lon:7.3517,
+  km:'ca. 12 km', h:'ca. 5:00 h', up:'ca. 1000 hm', grad:'anspruchsvoll', wiki:'Gran-Paradiso-Nationalpark', cq:'Rifugio Vittorio Sella Valnontey ibex',
+  d:'Der Klassiker des Gran-Paradiso-Nationalparks: alter Königsjagdweg von Cogne hinauf zur Hütte auf 2584 m. Steinbock- und Gämsenbeobachtung auf der Hochebene fast garantiert, am besten früh morgens.',
+  q:'Outdooractive / Parco Nazionale Gran Paradiso', url:'https://www.outdooractive.com/de/wanderungen/gran-paradiso/'},
+
+ {id:'h-lillaz', zid:'aosta', n:'Cascate di Lillaz ab Cogne', reg:'Gran Paradiso', lat:45.6047, lon:7.3781,
+  km:'ca. 6 km', h:'ca. 2:00 h', up:'ca. 200 hm', grad:'leicht', wiki:'Cogne', cq:'Cascate di Lillaz Cogne',
+  d:'Flacher Familienweg von Cogne zum dreistufigen Wasserfall von Lillaz. Guter Ruhetag zwischen zwei anstrengenden Bergtouren, mit Einkehr im Dorf.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/cogne/'},
+
+ {id:'h-superga', zid:'turin', n:'Turin – Basilica di Superga Höhenweg', reg:'Piemont', lat:45.0806, lon:7.7683,
+  km:'ca. 8 km', h:'ca. 2:45 h', up:'ca. 450 hm', grad:'mittel', wiki:'Basilica di Superga', cq:'Basilica di Superga Turin',
+  d:'Aufstieg aus dem Po-Tal zur Barockbasilika auf dem Hügel (672 m) mit Blick über Turin bis zum Monte Rosa. Abstieg bequem mit der historischen Zahnradbahn ab Sassi.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/turin/'},
+
+ {id:'h-rigi', zid:'luzern', n:'Rigi Kulm – Rigi Kaltbad Höhenweg', reg:'Vierwaldstättersee', lat:47.0561, lon:8.4853,
+  km:'ca. 7 km', h:'ca. 2:15 h', up:'ca. 100 hm auf / 450 hm ab', grad:'leicht', wiki:'Rigi', cq:'Rigi Kulm',
+  d:'Panoramaweg auf der „Königin der Berge“ mit Blick über Vierwaldstättersee, Mittelland und die Innerschweizer Alpen. Auf- und Abstieg bequem per Zahnradbahn.',
+  q:'SchweizMobil Wanderland', url:'https://schweizmobil.ch/de/wanderland'},
+
+ {id:'h-feldberg', zid:'titisee', n:'Feldberg-Steig', reg:'Schwarzwald', lat:47.8736, lon:8.0039,
+  km:'ca. 12 km', h:'ca. 4:00 h', up:'ca. 450 hm', grad:'mittel', wiki:'Feldberg (Berg)', cq:'Feldberg Black Forest',
+  d:'Zertifizierter Premiumweg über den höchsten Berg außerhalb der Alpen in Deutschland (1493 m), vorbei am Feldsee und dem Bismarckdenkmal. Bei Föhn Sicht bis zu den Alpen.',
+  q:'Outdooractive / Naturpark Südschwarzwald', url:'https://www.outdooractive.com/de/route/wanderung/schwarzwald/feldbergsteig/'},
+
+ {id:'h-ravenna', zid:'titisee', n:'Ravennaschlucht und Höllental', reg:'Schwarzwald', lat:47.9186, lon:8.0044,
+  km:'ca. 9 km', h:'ca. 3:00 h', up:'ca. 400 hm', grad:'mittel', wiki:'Ravennaschlucht', cq:'Ravennaschlucht',
+  d:'Wilde Klamm unter dem Ravenna-Viadukt, mit Wasserfällen und der Löffeltalmühle. Angenehm kühl an Hitzetagen und gut mit der Bahn kombinierbar.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/hochschwarzwald/'},
+
+ {id:'h-rheinfall', zid:'rheinfall', n:'Rheinfall-Rundweg Neuhausen – Schloss Laufen', reg:'Schaffhausen', lat:47.6779, lon:8.6152,
+  km:'ca. 4 km', h:'ca. 1:15 h', up:'ca. 120 hm', grad:'leicht', wiki:'Rheinfall', cq:'Rhine Falls',
+  d:'Kurze Runde über beide Ufer, Felsentreppe hinunter zur Kanzel direkt im Sprühnebel des Falls, Rückweg über die Rheinbrücke.',
+  q:'SchweizMobil Wanderland', url:'https://schweizmobil.ch/de/wanderland'},
+
+ {id:'h-philo', zid:'heidelberg', n:'Philosophenweg und Heiligenberg', reg:'Neckartal', lat:49.4139, lon:8.6889,
+  km:'ca. 8 km', h:'ca. 2:45 h', up:'ca. 350 hm', grad:'mittel', wiki:'Philosophenweg (Heidelberg)', cq:'Philosophenweg Heidelberg',
+  d:'Vom Neckarufer steil hinauf zum berühmtesten Aussichtsweg Deutschlands mit Blick auf Schloss und Altstadt, weiter zur Thingstätte und zum Michaelskloster auf dem Heiligenberg.',
+  q:'Outdooractive', url:'https://www.outdooractive.com/de/wanderungen/heidelberg/'},
+
+ {id:'h-mullerthal', zid:'luxemburg', n:'Mullerthal Trail Route 2 (Kleine Luxemburger Schweiz)', reg:'Luxemburg', lat:49.7936, lon:6.3153,
+  km:'ca. 12 km', h:'ca. 4:00 h', up:'ca. 350 hm', grad:'mittel', wiki:'Müllerthal', cq:'Mullerthal Luxembourg',
+  d:'Bizarre Sandstein-Felsformationen, enge Schluchten, Moosteppiche und der Schiessentümpel-Wasserfall. Einer der schönsten Wanderwege Europas und ein perfekter letzter Naturtag vor Aachen.',
+  q:'Outdooractive / Mullerthal Trail', url:'https://www.outdooractive.com/de/wanderungen/mullerthal/'},
+
+ {id:'h-mosel', zid:'trier', n:'Moselsteig-Etappe Trier – Schweich', reg:'Mosel', lat:49.7833, lon:6.7333,
+  km:'ca. 14 km', h:'ca. 4:15 h', up:'ca. 400 hm', grad:'mittel', wiki:'Moselsteig', cq:'Moselsteig',
+  d:'Über die Höhen oberhalb des Moseltals mit Blick auf Weinberge und Flussschleifen. Bequem per Bahn oder Bus zurück nach Trier.',
+  q:'Outdooractive / Moselsteig', url:'https://www.outdooractive.com/de/wanderungen/moselsteig/'},
+
+ {id:'h-venn', zid:'aachen', n:'Hohes Venn – Botrange Holzstege', reg:'Eifel/Ardennen', lat:50.5019, lon:6.0975,
+  km:'ca. 9 km', h:'ca. 2:45 h', up:'ca. 100 hm', grad:'leicht', wiki:'Hohes Venn', cq:'Hohes Venn Botrange',
+  d:'Hochmoor auf 690 m mit kilometerlangen Holzstegen über die Torfflächen, urig-nordische Landschaft direkt hinter Aachen. Nur auf den Stegen bleiben, das Moor ist streng geschützt.',
+  q:'Outdooractive / Naturpark Hohes Venn-Eifel', url:'https://www.outdooractive.com/de/wanderungen/hohes-venn/'}
+];
+
+/* Routenvarianten, beide mit Ziel Aachen */
+/* Alle Vorlagen: max. 14 Nächte, jede Übernachtungsstation mind. 2 Nächte (siehe Kopfzeile:
+   "danach mindestens 2 Nächte Standzeit"), Strassburg und Genf sind in jeder Vorlage Pflichtstationen.
+   Reine Zwischenstopps ohne Übernachtung (0 Nächte) sind davon ausgenommen. */
+const MAXNIGHTS = 14;
+const MINNIGHTS = 2;
+const ROUTEN = {
+ klassik: {name:'Klassik · 13 Nächte', desc:'Straßburg, Genf/Genfersee, Berner Oberland, Luzern. Wenige Stationen, dafür überall mindestens 2 Nächte Standzeit.',
+  stops:[
+   {id:'giessen', n:0}, {id:'strassburg', n:2}, {id:'vogesen', n:2}, {id:'genf', n:2},
+   {id:'interlaken', n:3}, {id:'kandersteg', n:2}, {id:'luzern', n:2},
+   {id:'titisee', n:0}, {id:'trier', n:0}, {id:'aachen', n:0}]},
+
+ sued: {name:'Süd · 13 Nächte · Tessin & Oberitalien', desc:'Straßburg und Genf als Pflichtstationen, danach über das Aostatal und den Lago Maggiore ins Tessin, zurück über den Gotthard ins Berner Oberland. Anfahrt Aosta über Mont-Blanc- oder Grosser-St.-Bernhard-Tunnel (mautpflichtig). Titisee/Trier sind reine Zwischenstopps ohne Übernachtung.',
+  stops:[
+   {id:'giessen', n:0}, {id:'strassburg', n:2}, {id:'genf', n:2}, {id:'aosta', n:2},
+   {id:'lagomaggiore', n:2}, {id:'locarno', n:3}, {id:'interlaken', n:2},
+   {id:'titisee', n:0}, {id:'trier', n:0}, {id:'aachen', n:0}]},
+
+ seen: {name:'Seen · 13 Nächte · Oberitalien-Fokus', desc:'Straßburg und Genf als Pflichtstationen, danach Lago Maggiore, Comer See und Vierwaldstättersee. Wenige Basen, dafür überall mindestens 2 Nächte. Titisee/Trier sind reine Zwischenstopps ohne Übernachtung.',
+  stops:[
+   {id:'giessen', n:0}, {id:'strassburg', n:2}, {id:'genf', n:2}, {id:'lagomaggiore', n:2},
+   {id:'comersee', n:3}, {id:'interlaken', n:2}, {id:'luzern', n:2},
+   {id:'titisee', n:0}, {id:'trier', n:0}, {id:'aachen', n:0}]}
+};
+/* Orte, bei denen die Anfahrt über einen Alpenpass oder Tunnel führt */
+const ALPIN = new Set(['aosta','lagomaggiore','ortasee','locarno','verzasca','vallemaggia','lugano','bellinzona','comersee','interlaken','kandersteg','grindelwald']);
+
+/* ============ HILFSFUNKTIONEN ============ */
+const byId = id => Z.find(z=>z.id===id);
+function dist(a,b){
+  const R=6371,r=Math.PI/180;
+  const dLa=(b.lat-a.lat)*r, dLo=(b.lon-a.lon)*r;
+  const x=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+const road = (a,b)=>Math.round(dist(a,b)*1.35);
+/* Reisegeschwindigkeit Gespann: kurze Etappen laufen über Landstraße (langsam),
+   lange Etappen überwiegend über Autobahn (Tempolimit 80–100 km/h). */
+function speed(km){ return 52 + Math.min(30, km/11); }
+function drive(a,b){
+  const km=road(a,b);
+  let h=km/speed(km);
+  const alp=document.getElementById('alpzu');
+  if(alp&&alp.checked&&(ALPIN.has(a.id)||ALPIN.has(b.id))) h*=1.3;   // Pässe, Tunnelstau, Serpentinen
+  return h;
+}
+function hhmm(h){ const m=Math.round(h*60); return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')+' h'; }
+const dstr = d => d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'});
+const iso  = d => d.toISOString().slice(0,10);
+const addD = (d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ================= BILDER =================
+   Fotos liegen lokal im Ordner "bilder" neben dieser HTML-Datei (einmalig von Wikipedia
+   heruntergeladen, siehe bilder/_download_log.csv). Kein Live-Fetch mehr zur Laufzeit –
+   das war unzuverlässig. Fehlt ein Foto, wird das Kärtchen ohne Bild angezeigt. */
+async function jget(u){ const r=await fetch(u); if(!r.ok) throw 0; return r.json(); }
+const PIC_EXTS=['jpg','JPG','jpeg','JPEG','png','PNG'];
+function mountGallery(el){
+  const id=el.dataset.id;
+  let i=0;
+  const tryNext=()=>{
+    if(i>=PIC_EXTS.length){ el.innerHTML='<div class="ph">Kein Foto vorhanden</div>'; return; }
+    const src='bilder/'+id+'.'+PIC_EXTS[i];
+    const img=new Image();
+    img.onload=()=>{ el.innerHTML=`<div class="fr on" style="background-image:url('${src}')"></div>`; };
+    img.onerror=()=>{ i++; tryNext(); };
+    img.src=src;
+  };
+  tryNext();
+}
+function fillPics(root){ root.querySelectorAll('.gal[data-id]').forEach(mountGallery); }
+
+/* ============ TABS ============ */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  document.getElementById(b.dataset.t).classList.add('on');
+  if(b.dataset.t==='karte') setTimeout(()=>{map.invalidateSize(); drawMap();},60);
+  if(b.dataset.t==='wetter') setTimeout(()=>fmap.invalidateSize(),60);
+});
+
+/* ============ ÜBERSICHT / EMPFEHLUNG ============
+   Zeigt eine vom Nutzer gewählte Route (Vorlage oder gespeicherte Route) als "Empfehlung".
+   Wird ganz unten in INIT erstmalig gefüllt, weil sie das Speichersystem (store/apply) braucht. */
+const RECKEY='caravan2026.empfehlung';
+function recOptions(){
+  const opts=Object.entries(ROUTEN).map(([k,r])=>({key:'preset:'+k,label:r.name,stops:r.stops}));
+  Object.entries(store()).forEach(([name,d])=>{
+    if(Array.isArray(d.stops)&&d.stops.length) opts.push({key:'saved:'+name,label:name+' (gespeichert)',stops:d.stops});
+  });
+  return opts;
+}
+function renderRecOptions(){
+  const sel=document.getElementById('rec-pick'), opts=recOptions();
+  const want=localStorage.getItem(RECKEY);
+  sel.innerHTML=opts.map(o=>`<option value="${o.key.replace(/"/g,'')}">${o.label.replace(/</g,'')}</option>`).join('');
+  sel.value = opts.some(o=>o.key===want) ? want : (opts[0]?opts[0].key:'');
+}
+function renderRecommendation(){
+  const sel=document.getElementById('rec-pick'), opts=recOptions();
+  const chosen=opts.find(o=>o.key===sel.value) || opts[0];
+  const t=document.getElementById('t-master'), sum=document.getElementById('rec-sum');
+  if(!chosen){ t.innerHTML=''; sum.innerHTML='<p class="sub">Noch keine Route zum Empfehlen vorhanden.</p>'; return; }
+  localStorage.setItem(RECKEY, chosen.key);
+  const stops=chosen.stops.map(s=>({id:s.id,nights:+s.n||0}));
+  const start=document.getElementById('startdate').value||'2026-08-02';
+  const P=planDataFor(stops,start);
+  let rows='<tr><th>#</th><th>Etappe</th><th>Nächte</th><th>Fahrt ab Vorort</th><th>km</th></tr>';
+  P.forEach((p,i)=>{
+    const cls=p.h>4?'bad':(p.h>3?'warn':'ok');
+    rows+=`<tr><td>${i+1}</td><td><b>${p.z.n}</b></td><td>${p.n||'–'}</td>
+      <td>${p.first?'Start':`<span class="pill ${cls}">${hhmm(p.h)}</span>`}</td><td>${p.first?'–':p.km+' km'}</td></tr>`;
+  });
+  t.innerHTML=rows;
+  const nights=P.reduce((s,p)=>s+p.n,0), totKm=P.reduce((s,p)=>s+p.km,0);
+  const ende=P.length?(P[P.length-1].n?P[P.length-1].ab:P[P.length-1].an):null;
+  sum.innerHTML = P.length ? `<div class="src">${nights} Nächte${nights>MAXNIGHTS?' <b style="color:#eda0a0">– über dem 14-Tage-Ziel</b>':''} · ${totKm} km gesamt · Ankunft ${dstr(ende)}</div>` : '';
+}
+document.getElementById('rec-pick').onchange=renderRecommendation;
+document.getElementById('rec-open').onclick=()=>{
+  const sel=document.getElementById('rec-pick'), chosen=recOptions().find(o=>o.key===sel.value);
+  if(!chosen) return;
+  apply({stops:chosen.stops});
+  document.querySelector('nav button[data-t="planer"]').click();
+};
+
+/* ============ ZIELE ============ */
+const KATNAME={stadt:'Städte & Kultur',natur:'Natur & Landschaft',wandern:'Wandern & Seen'};
+let fKat='', fLand='';
+function renderZiele(){
+  const list=Z.filter(z=>(!fKat||z.kat===fKat)&&(!fLand||z.land===fLand));
+  const g=document.getElementById('g-ziele');
+  document.getElementById('z-count').textContent=`${list.length} von ${Z.length} Zielen`;
+  g.innerHTML=list.map(z=>{
+    const hikes=W.filter(w=>w.zid===z.id);
+    return `<div class="card">
+      <div class="gal" data-id="${z.id}"><div class="ph">Foto wird geladen …</div></div>
+      <div class="bd">
+        <h4>${z.n} <span class="src">· ${z.land}</span></h4>
+        <p>${z.d}</p>
+        ${Object.entries(z.info).map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('')}
+        <details class="more"><summary>Mehr Details</summary>
+          ${Object.entries(z.more||{}).map(([k,v])=>`<div class="kv"><span>${k.replace(/ ?2$/,'')}</span><b>${v}</b></div>`).join('')}
+          ${hikes.length?`<div class="kv" style="border:0;padding-top:8px"><span>Wanderungen</span><b>${hikes.map(h=>h.n).join(' · ')}</b></div>`:''}
+        </details>
+        <div class="tags"><span class="tag a">${KATNAME[z.kat]}</span><span class="tag">${z.typ}</span>
+          ${hikes.length?`<span class="tag w">${hikes.length} Wanderung${hikes.length>1?'en':''}</span>`:''}</div>
+      </div></div>`;
+  }).join('')||'<p class="sub">Keine Treffer.</p>';
+  fillPics(g);
+}
+document.querySelectorAll('#kat button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#kat button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); fKat=b.dataset.k; renderZiele();
+});
+document.getElementById('f-land').onchange=e=>{fLand=e.target.value; renderZiele();};
+renderZiele();
+
+/* ============ WANDERUNGEN ============ */
+let renderHikes=()=>{};
+(function(){
+  const sel=document.getElementById('f-ziel');
+  [...new Set(W.map(w=>w.reg))].sort().forEach(r=>sel.add(new Option(r,r)));
+  renderHikes=function render(){
+    const fz=sel.value, fg=document.getElementById('f-grad').value;
+    const list=W.filter(w=>(!fz||w.reg===fz)&&(!fg||w.grad===fg));
+    document.getElementById('w-count').textContent=`${list.length} von ${W.length} Touren`;
+    const g=document.getElementById('g-wandern');
+    g.innerHTML=list.map(w=>{
+      const gc=w.grad==='leicht'?'a':(w.grad==='mittel'?'w':'r');
+      return `<div class="card">
+        <div class="gal" data-id="${w.id}"><div class="ph">Foto wird geladen …</div></div>
+        <div class="bd">
+          <h4>${w.n}</h4>
+          <p>${w.d}</p>
+          <div class="kv"><span>Distanz</span><b>${w.km}</b></div>
+          <div class="kv"><span>Gehzeit</span><b>${w.h}</b></div>
+          <div class="kv"><span>Höhenmeter</span><b>${w.up}</b></div>
+          <div class="kv"><span>Ausgangspunkt</span><b>${byId(w.zid).n}</b></div>
+          <div class="tags"><span class="tag ${gc}">${w.grad}</span><span class="tag">${w.reg}</span></div>
+          <div class="src" style="margin-top:6px">Quelle: <a href="${w.url}" target="_blank">${w.q}</a></div>
+        </div></div>`;
+    }).join('')||'<p class="sub">Keine Treffer.</p>';
+    fillPics(g);
+  }
+  sel.onchange=renderHikes; document.getElementById('f-grad').onchange=renderHikes; renderHikes();
+})();
+
+/* ============ PLANER ============ */
+let TOUR=[];
+(function(){
+  const p=document.getElementById('picks');
+  p.innerHTML=['stadt','natur','wandern'].map(k=>
+    `<div class="src" style="margin:10px 0 3px;text-transform:uppercase;letter-spacing:.5px">${KATNAME[k]}</div>`+
+    Z.filter(z=>z.kat===k).map(z=>`<label class="pick"><input type="checkbox" value="${z.id}"><span>${z.n} <span class="src">${z.land}</span></span></label>`).join('')
+  ).join('');
+  p.onchange=e=>{
+    const id=e.target.value;
+    if(e.target.checked){ if(!TOUR.some(t=>t.id===id)) TOUR.push({id,nights:2}); }
+    else TOUR=TOUR.filter(t=>t.id!==id);
+    renderSeq();
+  };
+  const rb=document.getElementById('routebtns');
+  Object.entries(ROUTEN).forEach(([k,r],i)=>{
+    const b=document.createElement('button');
+    b.className='btn g'; b.textContent=r.name; b.dataset.r=k;
+    b.onclick=()=>{
+      rb.querySelectorAll('button').forEach(x=>x.className='btn g');
+      b.className='btn';
+      TOUR=r.stops.map(e=>({id:e.id,nights:e.n}));
+      document.getElementById('routedesc').textContent=r.desc;
+      syncBoxes(); renderSeq();
+    };
+    rb.appendChild(b);
+  });
+  document.getElementById('b-clear').onclick=()=>{ TOUR=[]; document.getElementById('routedesc').textContent=''; rb.querySelectorAll('button').forEach(x=>x.className='btn g'); syncBoxes(); renderSeq(); };
+  document.getElementById('startdate').onchange=renderSeq;
+  document.getElementById('alpzu').onchange=()=>{ saveActive(); renderPlan(); drawMap(); };
+})();
+function syncBoxes(){ document.querySelectorAll('#picks input').forEach(i=>i.checked=TOUR.some(t=>t.id===i.value)); }
+function renderSeq(){
+  const s=document.getElementById('seq');
+  saveActive();
+  if(!TOUR.length){ s.innerHTML='<p class="sub">Noch keine Ziele gewählt. „Empfehlung laden“ liefert einen fertigen Vorschlag mit Ziel Aachen.</p>'; renderPlan(); drawMap(); return; }
+  s.innerHTML=TOUR.map((t,i)=>{
+    const z=byId(t.id);
+    return `<div class="seqrow"><span class="n">${i+1}</span><b>${z.n}</b>
+      <span class="src">${z.land}</span>
+      <span style="margin-left:14px;font-size:12.5px;color:var(--tx2)">Nächte</span>
+      <input type="number" min="0" max="9" value="${t.nights}" data-n="${i}" style="width:56px;padding:3px 6px">
+      <span class="g"><button data-u="${i}">↑</button><button data-d="${i}">↓</button><button data-x="${i}">✕</button></span></div>`;
+  }).join('');
+  s.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    if(b.dataset.u!==undefined){const i=+b.dataset.u; if(i>0)[TOUR[i-1],TOUR[i]]=[TOUR[i],TOUR[i-1]];}
+    if(b.dataset.d!==undefined){const i=+b.dataset.d; if(i<TOUR.length-1)[TOUR[i+1],TOUR[i]]=[TOUR[i],TOUR[i+1]];}
+    if(b.dataset.x!==undefined){TOUR.splice(+b.dataset.x,1); syncBoxes();}
+    renderSeq();
+  });
+  s.querySelectorAll('input[data-n]').forEach(i=>i.onchange=()=>{TOUR[+i.dataset.n].nights=Math.max(0,+i.value||0); renderPlan(); drawMap();});
+  renderPlan(); drawMap();
+}
+function planDataFor(stops,startVal){
+  const start=new Date(startVal||'2026-08-02');
+  let cur=new Date(start), out=[], prev=null;
+  stops.forEach((t,i)=>{
+    const z=byId(t.id); if(!z) return;
+    const h=prev?drive(prev,z):0, km=prev?road(prev,z):0;
+    out.push({z,an:new Date(cur),ab:addD(cur,t.nights),n:t.nights,h,km,first:i===0});
+    cur=addD(cur,t.nights); prev=z;
+  });
+  return out;
+}
+function planData(){
+  return planDataFor(TOUR, document.getElementById('startdate').value);
+}
+function updateHeader(P){
+  const h=document.getElementById('hdr-route');
+  if(!P||!P.length){ h.textContent=''; return; }
+  const nights=P.reduce((s,p)=>s+p.n,0);
+  const start=dstr(P[0].an);
+  h.textContent=`Aktive Route: ${P.map(p=>p.z.n).join(' → ')} · ${nights} Nächte · Start ${start}`;
+}
+function renderPlan(){
+  const P=planData(), t=document.getElementById('t-plan');
+  updateHeader(P);
+  if(!P.length){ t.innerHTML=''; document.getElementById('plan-sum').innerHTML=''; return; }
+  let h='<tr><th>#</th><th>Ort</th><th>Ankunft</th><th>Abfahrt</th><th>Nächte</th><th>Fahrt</th><th>km</th></tr>';
+  P.forEach((p,i)=>{
+    const cls=p.h>4?'bad':(p.h>3?'warn':'ok');
+    h+=`<tr><td>${i+1}</td><td><b>${p.z.n}</b></td><td>${dstr(p.an)}</td><td>${p.n?dstr(p.ab):'–'}</td>
+      <td>${p.n||'–'}</td><td>${p.first?'Start':`<span class="pill ${cls}">${hhmm(p.h)}</span>`}</td><td>${p.first?'–':p.km}</td></tr>`;
+  });
+  t.innerHTML=h;
+  const totKm=P.reduce((s,p)=>s+p.km,0), totH=P.reduce((s,p)=>s+p.h,0), nights=P.reduce((s,p)=>s+p.n,0);
+  const over=P.filter(p=>p.h>4).length, tight=P.filter(p=>p.h>3&&p.h<=4).length;
+  const last=P[P.length-1].z, ende=P[P.length-1].n?P[P.length-1].ab:P[P.length-1].an;
+  const zielOk = last.id==='aachen';
+  const back = zielOk?null:{h:drive(last,byId('aachen')),km:road(last,byId('aachen'))};
+  document.getElementById('plan-sum').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+      <div class="box" style="margin:0"><div class="src">Gesamtstrecke</div><b style="font-size:19px">${totKm} km</b></div>
+      <div class="box" style="margin:0"><div class="src">Reine Fahrzeit</div><b style="font-size:19px">${hhmm(totH)}</b></div>
+      <div class="box" style="margin:0"><div class="src">Nächte</div><b style="font-size:19px">${nights}</b></div>
+      <div class="box" style="margin:0"><div class="src">${zielOk?'Ankunft Aachen':'Restfahrt nach Aachen'}</div>
+        <b style="font-size:19px">${zielOk?dstr(ende):hhmm(back.h)}</b>
+        <div class="src">${zielOk?'Endziel erreicht':back.km+' km ab '+last.n}</div></div>
+    </div>
+    <div class="note">${nights>MAXNIGHTS?`<b style="color:#eda0a0">${nights} Nächte – über dem Ziel von max. 14 Tagen.</b> Etappen kürzen oder Ziele streichen. `:''}
+    ${over?`<b style="color:#eda0a0">${over} Etappe(n) über 4 h</b> – bitte splitten oder ein Zwischenziel einfügen. `:''}
+    ${tight?`${tight} Etappe(n) zwischen 3 und 4 h, also im Limit. `:''}
+    ${!over&&!tight?'Alle Etappen unter 3 h. ':''}
+    ${zielOk?'':'<b style="color:#e8c27f">Achtung: Die Tour endet nicht in Aachen.</b> '}
+    Fahrzeiten sind Schätzungen (Luftlinie × 1,35 ÷ 65 km/h) ohne Pausen, Stau und Passfahrten. Alpenpässe mit Gespann real 30–50 % länger.</div>`;
+}
+
+/* ============ ROUTEN SPEICHERN / LADEN / TEILEN ============
+   Alles läuft über localStorage der HTML-Datei selbst – kein Export/Import nötig, damit es "hält".
+   Der aktuelle Arbeitsstand (ACTIVEKEY) wird bei jeder Änderung automatisch gesichert und beim
+   nächsten Öffnen automatisch wiederhergestellt. "Speichern" legt zusätzlich benannte Routen an. */
+const LSKEY='caravan2026.routen';
+const ACTIVEKEY='caravan2026.aktiv';
+const msg=(t,ok=true)=>{const e=document.getElementById('saveMsg');e.innerHTML=`<span style="color:${ok?'#7fd8c6':'#eda0a0'}">${t}</span>`;setTimeout(()=>{if(e.textContent===t)e.textContent='';},4000);};
+function store(){ try{ return JSON.parse(localStorage.getItem(LSKEY)||'{}'); }catch(e){ return {}; } }
+function snapshot(){ return {start:document.getElementById('startdate').value, alp:document.getElementById('alpzu').checked, stops:TOUR.map(t=>({id:t.id,n:t.nights}))}; }
+function saveActive(){ try{ localStorage.setItem(ACTIVEKEY, JSON.stringify(snapshot())); }catch(e){} }
+function loadActive(){ try{ return JSON.parse(localStorage.getItem(ACTIVEKEY)||'null'); }catch(e){ return null; } }
+function apply(d){
+  if(!d||!Array.isArray(d.stops)) return false;
+  const valid=d.stops.filter(s=>byId(s.id));
+  if(!valid.length) return false;
+  TOUR=valid.map(s=>({id:s.id,nights:+s.n||0}));
+  if(d.start) document.getElementById('startdate').value=d.start;
+  if(d.alp!==undefined) document.getElementById('alpzu').checked=!!d.alp;
+  document.querySelectorAll('#routebtns button').forEach(x=>x.className='btn g');
+  syncBoxes(); renderSeq(); return true;
+}
+function renderSaved(){
+  const st=store(), c=document.getElementById('savedList'), keys=Object.keys(st).sort();
+  if(!keys.length){ c.innerHTML='<div class="src" style="padding:4px 0">Noch nichts gespeichert.</div>'; }
+  else{
+    c.innerHTML=keys.map(k=>{
+      const nights=(st[k].stops||[]).reduce((s,x)=>s+(+x.n||0),0);
+      return `<div class="seqrow" style="padding:6px 9px;margin-bottom:4px">
+        <b style="font-size:13px">${k.replace(/</g,'')}</b>
+        <span class="src">${(st[k].stops||[]).length} Stopps · ${nights} Nächte</span>
+        <span class="g"><button data-ld="${k.replace(/"/g,'')}" title="laden">▸</button><button data-dl="${k.replace(/"/g,'')}" title="löschen">✕</button></span></div>`;
+    }).join('');
+    c.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const st=store();
+      if(b.dataset.ld!==undefined){ apply(st[b.dataset.ld])?msg('„'+b.dataset.ld+'“ geladen.'):msg('Konnte nicht geladen werden.',false); }
+      else{ delete st[b.dataset.dl]; localStorage.setItem(LSKEY,JSON.stringify(st)); renderSaved(); renderRecOptions(); renderRecommendation(); msg('Gelöscht.'); }
+    });
+  }
+  renderRecOptions(); renderRecommendation();
+}
+document.getElementById('b-save').onclick=()=>{
+  const el=document.getElementById('saveName'), name=(el.value||'').trim();
+  if(!name) return msg('Bitte erst einen Namen eingeben.',false);
+  if(!TOUR.length) return msg('Die Route ist leer.',false);
+  const st=store();
+  if(st[name] && !confirm(`„${name}“ existiert schon. Überschreiben?`)) return;
+  st[name]={...snapshot(), saved:new Date().toISOString()};
+  try{ localStorage.setItem(LSKEY,JSON.stringify(st)); }catch(e){ return msg('Speicher voll oder blockiert.',false); }
+  el.value=''; renderSaved(); msg('„'+name+'“ gespeichert.');
+};
+document.getElementById('b-export').onclick=()=>{
+  if(!TOUR.length) return msg('Die Route ist leer.',false);
+  const data={app:'Caravan-Roadtrip 2026', exportiert:new Date().toISOString(), aktuell:snapshot(), gespeichert:store()};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='Route-'+(document.getElementById('startdate').value||'2026')+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  msg('Datei exportiert – die könnt ihr im Drive teilen.');
+};
+document.getElementById('b-import').onclick=()=>document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(d.gespeichert && typeof d.gespeichert==='object'){
+        const st={...store(),...d.gespeichert};
+        localStorage.setItem(LSKEY,JSON.stringify(st)); renderSaved();
+      }
+      apply(d.aktuell||d)?msg('Route geladen.'):msg('Datei enthält keine gültige Route.',false);
+    }catch(err){ msg('Datei konnte nicht gelesen werden.',false); }
+  };
+  rd.readAsText(f); e.target.value='';
+};
+document.getElementById('b-link').onclick=async()=>{
+  if(!TOUR.length) return msg('Die Route ist leer.',false);
+  const code=btoa(unescape(encodeURIComponent(JSON.stringify(snapshot()))));
+  const url=location.href.split('#')[0]+'#r='+code;
+  try{ await navigator.clipboard.writeText(url); msg('Link kopiert. Funktioniert bei allen, die dieselbe HTML-Datei geöffnet haben.'); }
+  catch(e){ prompt('Link zum Kopieren:', url); }
+};
+/* Route aus dem Link übernehmen */
+function loadFromHash(){
+  const m=location.hash.match(/[#&]r=([^&]+)/);
+  if(!m) return false;
+  try{ return apply(JSON.parse(decodeURIComponent(escape(atob(m[1]))))); }catch(e){ return false; }
+}
+window.addEventListener('hashchange',loadFromHash);
+
+/* ============ WETTER ============ */
+const WMO={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌦️',63:'🌧️',65:'🌧️',
+ 71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+(function(){
+  const s=document.getElementById('wx-ziel');
+  Z.forEach(z=>s.add(new Option(z.n,z.id)));
+  s.value='interlaken';
+  s.onchange=loadWx; document.getElementById('wx-go').onclick=loadWx;
+})();
+async function loadWx(){
+  const z=byId(document.getElementById('wx-ziel').value);
+  const out=document.getElementById('wx-out'), st=document.getElementById('wx-stat');
+  out.textContent='Wird geladen …'; st.textContent='';
+  const END='2026-08-18';
+  try{
+    const j=await jget(`https://api.open-meteo.com/v1/forecast?latitude=${z.lat}&longitude=${z.lon}`
+      +`&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,relative_humidity_2m_min`
+      +`&timezone=Europe%2FBerlin&forecast_days=16`);
+    const d=j.daily;
+    let html='<div class="wx">';
+    d.time.forEach((t,i)=>{
+      const dt=new Date(t);
+      html+=`<div class="wxd"><div class="d">${dt.toLocaleDateString('de-DE',{weekday:'short'})} ${dt.getDate()}.${dt.getMonth()+1}.</div>
+        <div class="i">${WMO[d.weathercode[i]]||'·'}</div>
+        <div class="t">${Math.round(d.temperature_2m_max[i])}°<small>/${Math.round(d.temperature_2m_min[i])}°</small></div>
+        <div class="p">${d.precipitation_sum[i]>0?d.precipitation_sum[i].toFixed(1)+' mm':'—'}</div></div>`;
+    });
+    const last=d.time[d.time.length-1];
+    let gap=[], c=addD(new Date(last),1);
+    while(iso(c)<=END){ gap.push(iso(c)); c=addD(c,1); }
+    if(gap.length){
+      const clim=await climatology(z,gap);
+      gap.forEach((g,i)=>{
+        const dt=new Date(g), k=clim[i];
+        html+=`<div class="wxd est"><div class="d">${dt.toLocaleDateString('de-DE',{weekday:'short'})} ${dt.getDate()}.${dt.getMonth()+1}.</div>
+          <div class="i">Ø</div>
+          <div class="t">${k?Math.round(k.mx)+'°':'–'}<small>${k?'/'+Math.round(k.mn)+'°':''}</small></div>
+          <div class="p">${k?k.pr.toFixed(1)+' mm':''}</div></div>`;
+      });
+    }
+    html+='</div>';
+    st.innerHTML=`Prognose bis <b>${new Date(last).toLocaleDateString('de-DE')}</b> · gestrichelt = Klimamittel 2020–2025 (ERA5) bis 18.08. · Daten <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>`;
+    out.innerHTML=html;
+  }catch(e){
+    out.innerHTML='<p>Wetterdaten konnten nicht geladen werden (keine Internetverbindung?). Fallback: <a href="https://www.meteoschweiz.admin.ch/" target="_blank">MeteoSchweiz</a> · <a href="https://meteofrance.com/" target="_blank">Météo-France</a> · <a href="https://www.dwd.de/" target="_blank">DWD</a></p>';
+  }
+}
+async function climatology(z,days){
+  try{
+    const acc={};
+    for(const y of [2020,2021,2022,2023,2024,2025]){
+      const j=await jget(`https://archive-api.open-meteo.com/v1/archive?latitude=${z.lat}&longitude=${z.lon}`
+        +`&start_date=${y}-08-01&end_date=${y}-08-20&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%2FBerlin`);
+      j.daily.time.forEach((t,i)=>{
+        const k=t.slice(5);
+        (acc[k]=acc[k]||[]).push([j.daily.temperature_2m_max[i],j.daily.temperature_2m_min[i],j.daily.precipitation_sum[i]]);
+      });
+    }
+    return days.map(d=>{
+      const a=acc[d.slice(5)]; if(!a||!a.length) return null;
+      const av=n=>a.reduce((s,x)=>s+(x[n]||0),0)/a.length;
+      return {mx:av(0),mn:av(1),pr:av(2)};
+    });
+  }catch(e){ return days.map(()=>null); }
+}
+
+/* ============ WALDBRAND-KARTE ============ */
+const fmap=L.map('firemap',{scrollWheelZoom:false}).setView([47.4,6.6],6);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  {maxZoom:18,attribution:'© OpenStreetMap © CARTO'}).addTo(fmap);
+const EFFIS='https://maps.effis.emergency.copernicus.eu/gwis';
+const today=new Date().toISOString().slice(0,10);
+/* Live-Ebenen direkt von Copernicus/EFFIS – amtlich, standardmäßig an */
+const fwiLayer=L.tileLayer.wms(EFFIS,{layers:'ecmwf007.fwi',format:'image/png',transparent:true,
+  opacity:.55,version:'1.1.1',TIME:today,attribution:'EFFIS / Copernicus EMS'});
+const hsLayer=L.tileLayer.wms(EFFIS,{layers:'modis.hs',format:'image/png',transparent:true,
+  opacity:.9,version:'1.1.1',TIME:today,attribution:'EFFIS / Copernicus EMS'});
+fwiLayer.addTo(fmap); hsLayer.addTo(fmap);
+document.getElementById('fw-fwi').onchange=e=>{ e.target.checked?fwiLayer.addTo(fmap):fmap.removeLayer(fwiLayer); };
+document.getElementById('fw-hs').onchange=e=>{ e.target.checked?hsLayer.addTo(fmap):fmap.removeLayer(hsLayer); };
+
+/* Echte, aktuelle Branderkennungen – kein berechneter Index. NASA FIRMS, Satellit Suomi-NPP/VIIRS,
+   öffentliche 24h-CSV für Europa, kein API-Key nötig. */
+let fireDots=L.layerGroup().addTo(fmap);
+const FIRMS_URL='https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Europe_24h.csv';
+const FIRE_RADIUS_KM=50;
+function parseCsv(t){
+  const lines=t.trim().split('\n'), head=lines[0].split(',');
+  return lines.slice(1).map(l=>{
+    const c=l.split(','), o={};
+    head.forEach((h,i)=>o[h]=c[i]);
+    return o;
+  });
+}
+const fmtUtc = row => `${row.acq_date} ${String(row.acq_time).padStart(4,'0').replace(/(\d\d)(\d\d)/,'$1:$2')} UTC`;
+async function loadFire(){
+  const out=document.getElementById('fire-out');
+  fireDots.clearLayers();
+  out.textContent='Wird geladen …';
+  try{
+    const r=await fetch(FIRMS_URL);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const rows=parseCsv(await r.text());
+    const near=[];
+    rows.forEach(row=>{
+      const lat=+row.latitude, lon=+row.longitude;
+      if(!isFinite(lat)||!isFinite(lon)) return;
+      let best=null, bestD=Infinity;
+      Z.forEach(z=>{ const d=dist({lat,lon},z); if(d<bestD){ bestD=d; best=z; } });
+      if(best && bestD<=FIRE_RADIUS_KM) near.push({...row, lat, lon, near:best, d:bestD});
+    });
+    near.sort((a,b)=>a.d-b.d);
+    near.forEach(f=>{
+      const frp=(+f.frp);
+      L.circleMarker([f.lat,f.lon],{radius:7,color:'#0f1418',weight:1.5,fillColor:'#d9534f',fillOpacity:.9})
+        .bindTooltip(`<b>Feuer erkannt</b><br>${f.d.toFixed(0)} km von ${f.near.n}<br>${fmtUtc(f)}<br>Konfidenz ${f.confidence}${isFinite(frp)?` · FRP ${frp.toFixed(1)} MW`:''}`,
+          {direction:'top',opacity:.96}).addTo(fireDots);
+    });
+    if(!near.length){
+      out.innerHTML=`<b style="color:#7fd8c6">Keine aktuellen Feuer im ${FIRE_RADIUS_KM}-km-Umkreis der Reiseziele erkannt.</b> Quelle: NASA FIRMS VIIRS, Auswertung der letzten 24 h, abgerufen ${new Date().toLocaleString('de-DE')}.`;
+    }else{
+      out.innerHTML=`<b style="color:#eda0a0">${near.length} Branderkennung(en) im ${FIRE_RADIUS_KM}-km-Umkreis der Reiseziele, letzte 24 h.</b>`+
+        '<table style="margin-top:8px"><tr><th>Nächstes Ziel</th><th>Entfernung</th><th>Datum/Zeit</th><th>Konfidenz</th><th>FRP</th></tr>'+
+        near.map(f=>{ const frp=(+f.frp);
+          return `<tr><td><b>${f.near.n}</b></td><td>${f.d.toFixed(0)} km</td><td>${fmtUtc(f)}</td><td>${f.confidence}</td><td>${isFinite(frp)?frp.toFixed(1)+' MW':'–'}</td></tr>`;
+        }).join('')+'</table>';
+    }
+  }catch(e){
+    out.innerHTML='<p>Live-Branddaten gerade nicht erreichbar (Netzwerk oder vom Browser blockiert). Bitte die amtlichen Live-Karten nutzen: '+
+      '<a href="https://firms.modaps.eosdis.nasa.gov/map/" target="_blank">NASA FIRMS Karte</a> · '+
+      '<a href="https://forest-fire.emergency.copernicus.eu/" target="_blank">EFFIS</a>.</p>';
+  }
+}
+document.getElementById('b-fire-refresh').onclick=loadFire;
+
+/* ============ HAUPTKARTE ============ */
+const BASES={
+ 'Gelände':['https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png','© OpenTopoMap (CC-BY-SA)',17],
+ 'Hell':['https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png','© OpenStreetMap © CARTO',19],
+ 'Dunkel':['https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png','© OpenStreetMap © CARTO',19],
+ 'Satellit':['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}','© Esri, Maxar, Earthstar Geographics',18]
+};
+const map=L.map('map',{scrollWheelZoom:true,zoomControl:true}).setView([47.6,6.6],6);
+let base=null;
+function setBase(name){
+  if(base) map.removeLayer(base);
+  const [u,a,mz]=BASES[name];
+  base=L.tileLayer(u,{maxZoom:mz,attribution:a});
+  base.addTo(map); base.bringToBack();
+}
+(function(){
+  const c=document.getElementById('basemaps');
+  Object.keys(BASES).forEach((k,i)=>{
+    const b=document.createElement('button'); b.textContent=k; if(i===0)b.classList.add('on');
+    b.onclick=()=>{ c.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); setBase(k); };
+    c.appendChild(b);
+  });
+  setBase('Gelände');
+})();
+let layer=L.layerGroup().addTo(map), hikeLayer=L.layerGroup();
+document.getElementById('showAll').onchange=drawMap;
+document.getElementById('showHikes').onchange=e=>{ e.target.checked?hikeLayer.addTo(map):map.removeLayer(hikeLayer); drawMap(); };
+
+function drawMap(){
+  layer.clearLayers(); hikeLayer.clearLayers();
+  const P=planData(), ids=P.map(p=>p.z.id);
+  if(document.getElementById('showAll').checked){
+    Z.filter(z=>!ids.includes(z.id)).forEach(z=>{
+      L.circleMarker([z.lat,z.lon],{radius:5.5,color:'#22303a',weight:2,fillColor:'#5a6b76',fillOpacity:.9})
+        .bindTooltip(`${z.n} <span style="opacity:.6">(${KATNAME[z.kat]})</span>`,{direction:'top'}).addTo(layer);
+    });
+  }
+  if(document.getElementById('showHikes').checked){
+    W.forEach(w=>{
+      L.marker([w.lat,w.lon],{icon:L.divIcon({className:'',iconSize:[14,14],iconAnchor:[7,7],
+        html:'<div style="width:12px;height:12px;background:#8bd4ff;border:1.5px solid #0f1418;transform:rotate(45deg)"></div>'})})
+        .bindTooltip(`<b>${w.n}</b><br>${w.km} · ${w.h} · ${w.up}<br>${w.grad}`,{direction:'top'}).addTo(hikeLayer);
+    });
+  }
+  if(!P.length){ map.setView([47.6,6.6],6); return; }
+  const pts=P.map(p=>[p.z.lat,p.z.lon]);
+  L.polyline(pts,{color:'#0f1418',weight:8,opacity:.55}).addTo(layer);
+  L.polyline(pts,{color:'#e8a33d',weight:3.5,opacity:.95}).addTo(layer);
+  for(let i=0;i<pts.length-1;i++){
+    const m=[(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2];
+    const ang=Math.atan2(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1])*180/Math.PI;
+    L.marker(m,{icon:L.divIcon({className:'',iconSize:[18,18],iconAnchor:[9,9],
+      html:`<div style="transform:rotate(${-ang}deg);color:#e8a33d;font-size:18px;line-height:1;text-shadow:0 0 3px #0f1418">➤</div>`})}).addTo(layer);
+  }
+  P.forEach((p,i)=>{
+    const isEnd = i===P.length-1, isStart = i===0;
+    const col = isEnd?'#e8a33d':(isStart?'#8bd4ff':'#3fb0a0');
+    L.marker([p.z.lat,p.z.lon],{zIndexOffset:500,icon:L.divIcon({className:'',iconSize:[120,34],iconAnchor:[17,17],
+      html:`<div style="display:flex;align-items:center;gap:5px">
+        <div style="width:32px;height:32px;border-radius:50%;background:${col};color:#08201d;display:grid;place-items:center;font:700 14px sans-serif;border:2.5px solid #0f1418;box-shadow:0 3px 9px rgba(0,0,0,.6);flex:0 0 auto">${i+1}</div>
+        <div style="background:rgba(15,20,24,.88);color:#e8eef2;font:600 11.5px sans-serif;padding:3px 7px;border-radius:6px;white-space:nowrap;border:1px solid #2b3841">${p.z.n}<br><span style="opacity:.65;font-weight:400">${dstr(p.an)}</span></div>
+      </div>`})})
+      .bindTooltip(`<b>${p.z.n}</b><br>Ankunft ${dstr(p.an)}${p.n?`<br>Abfahrt ${dstr(p.ab)} · ${p.n} Nächte`:''}${p.first?'':`<br>Fahrt ${hhmm(p.h)} · ${p.km} km`}`,
+        {direction:'bottom',opacity:.96}).addTo(layer);
+  });
+  map.fitBounds(L.latLngBounds(pts).pad(.2));
+}
+
+/* ============ INIT ============ */
+/* Live wiederherstellen: zuletzt bearbeiteter Stand aus dem Browser, sonst erste Vorlage. */
+if(!apply(loadActive())) document.querySelector('#routebtns button').click();
+renderSaved();            // füllt auch die Empfehlung (rec-pick) auf Basis von Vorlagen + Gespeichertem
+loadFromHash();           // Route aus geteiltem Link hat Vorrang, falls vorhanden
+loadWx(); loadFire();
+</script>
+</body>
+</html>
