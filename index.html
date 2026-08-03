@@ -75,8 +75,9 @@ th{color:var(--tx2);font-weight:600;font-size:12.4px;text-transform:uppercase;le
 .pick{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;cursor:pointer;font-size:13.5px}
 .pick:hover{background:#212b33}
 .pick input{accent-color:var(--acc);width:16px;height:16px}
-#map,#firemap{height:580px;border-radius:var(--rad);border:1px solid var(--line);background:#101820}
+#map,#firemap,#spmap{height:580px;border-radius:var(--rad);border:1px solid var(--line);background:#101820}
 #firemap{height:480px}
+#spmap{height:460px}
 .leg{display:flex;gap:12px;align-items:center;font-size:12.8px;padding:8px 0;color:var(--tx2);flex-wrap:wrap}
 .seq{display:flex;flex-direction:column;gap:6px}
 .seqrow{display:flex;gap:10px;align-items:center;background:#212b33;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13.3px}
@@ -148,6 +149,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
   <button class="on" data-t="ueber">Übersicht</button>
   <button data-t="ziele">Ziele</button>
   <button data-t="wandern">Wanderungen</button>
+  <button data-t="stellplatz">Stellplätze</button>
   <button data-t="planer">Tourenplaner</button>
   <button data-t="wetter">Wetter &amp; Waldbrand</button>
   <button data-t="karte">Karte</button>
@@ -220,6 +222,43 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
     <span class="src" id="w-count"></span>
   </div>
   <div class="grid" id="g-wandern"></div>
+</section>
+
+<!-- STELLPLÄTZE -->
+<section id="stellplatz">
+  <h2>Stellplätze &amp; Camping</h2>
+  <p class="sub">Live aus OpenStreetMap (Overpass-API): Wohnmobil-Stellplätze, Campingplätze und Ver-/Entsorgungsstationen im Umkreis eines Ziels – mit Preis, Ausstattung und Kapazität, soweit dort eingetragen. <b>park4night hat keine offene Schnittstelle</b>, lässt sich also nicht direkt einbinden; zu jedem Treffer gibt es aber einen Direktlink dorthin für Fotos und Bewertungen.</p>
+
+  <div class="box">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <select id="sp-ziel"></select>
+      <select id="sp-radius">
+        <option value="10">10 km Umkreis</option>
+        <option value="25" selected>25 km Umkreis</option>
+        <option value="50">50 km Umkreis</option>
+      </select>
+      <button class="btn" id="sp-go">Suchen</button>
+      <span id="sp-stat" class="src"></span>
+    </div>
+    <div class="seg" id="sp-types" style="margin-top:10px">
+      <label class="pick" style="padding:6px 13px"><input type="checkbox" id="sp-caravan" checked> Wohnmobil-Stellplätze</label>
+      <label class="pick" style="padding:6px 13px"><input type="checkbox" id="sp-camp" checked> Campingplätze</label>
+      <label class="pick" style="padding:6px 13px"><input type="checkbox" id="sp-dump"> Ver-/Entsorgung</label>
+    </div>
+    <div class="note">OpenStreetMap ist eine offene Karte: Die Einträge stammen von Freiwilligen und sind nicht überall vollständig. Vor der Anfahrt lohnt der Blick auf park4night oder die Website des Platzes – besonders bei Preisen, Öffnungszeiten und Durchfahrtshöhen.</div>
+  </div>
+
+  <div class="box">
+    <div class="wrapmap"><div id="spmap"></div></div>
+    <div class="leg">
+      <span><i style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#3fb0a0"></i> Wohnmobil-Stellplatz</span>
+      <span><i style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#8bd4ff"></i> Campingplatz</span>
+      <span><i style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#e8a33d"></i> Ver-/Entsorgung</span>
+      <span class="src">Daten © OpenStreetMap-Mitwirkende (ODbL)</span>
+    </div>
+  </div>
+
+  <div class="grid" id="sp-out"></div>
 </section>
 
 <!-- PLANER -->
@@ -336,6 +375,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
     <div class="seg" id="basemaps"></div>
     <label class="src" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="showAll" checked style="accent-color:var(--acc)"> nicht gewählte Ziele zeigen</label>
     <label class="src" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="showHikes" style="accent-color:var(--acc)"> Wanderungen einblenden</label>
+    <label class="src" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="showSpots" style="accent-color:var(--acc)"> Stellplätze einblenden</label>
   </div>
   <div class="wrapmap"><div id="map"></div></div>
   <div class="leg">
@@ -806,6 +846,11 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.getElementById(b.dataset.t).classList.add('on');
   if(b.dataset.t==='karte') setTimeout(()=>{map.invalidateSize(); drawMap();},60);
   if(b.dataset.t==='wetter') setTimeout(()=>fmap.invalidateSize(),60);
+  /* Overpass erst beim ersten Öffnen des Tabs abfragen, nicht bei jedem Seitenaufruf. */
+  if(b.dataset.t==='stellplatz') setTimeout(()=>{
+    spMap.invalidateSize();
+    if(!spLoaded){ spLoaded=true; loadSpots(); }
+  },60);
 });
 
 /* ============ ÜBERSICHT / EMPFEHLUNG ============
@@ -959,6 +1004,7 @@ function renderSeq(){
   const s=document.getElementById('seq');
   saveActive();
   if(document.getElementById('wx-ziel')) renderWxSelect();
+  if(document.getElementById('sp-ziel')) renderSpSelect();
   if(!TOUR.length){ s.innerHTML='<p class="sub">Noch keine Ziele gewählt. „Empfehlung laden“ liefert einen fertigen Vorschlag mit Ziel Aachen.</p>'; renderPlan(); drawMap(); return; }
   s.innerHTML=TOUR.map((t,i)=>{
     const z=byId(t.id);
@@ -1126,8 +1172,10 @@ window.addEventListener('hashchange',loadFromHash);
 /* ============ WETTER ============ */
 const WMO={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌦️',63:'🌧️',65:'🌧️',
  71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
-function renderWxSelect(){
-  const s=document.getElementById('wx-ziel');
+/* Ziel-Auswahlliste: erst die Orte der aktiven Route, danach alle übrigen.
+   Wird von Wetter und Stellplätzen gemeinsam genutzt. */
+function fillZielSelect(s, fallback){
+  if(!s) return;
   const prev=s.value;
   const onRoute=TOUR.map(t=>byId(t.id)).filter(Boolean);
   const onIds=new Set(onRoute.map(z=>z.id));
@@ -1142,8 +1190,10 @@ function renderWxSelect(){
   rest.forEach(z=>g2.appendChild(new Option(z.n,z.id)));
   s.appendChild(g2);
   const ids=[...onIds, ...rest.map(z=>z.id)];
-  s.value = ids.includes(prev) ? prev : (onRoute[0]?.id || 'interlaken');
+  s.value = ids.includes(prev) ? prev : ((onRoute[0]&&onRoute[0].id) || fallback);
 }
+function renderWxSelect(){ fillZielSelect(document.getElementById('wx-ziel'),'interlaken'); }
+function renderSpSelect(){ fillZielSelect(document.getElementById('sp-ziel'),'interlaken'); }
 (function(){
   renderWxSelect();
   document.getElementById('wx-ziel').onchange=loadWx;
@@ -1275,6 +1325,143 @@ async function loadFire(){
 }
 document.getElementById('b-fire-refresh').onclick=loadFire;
 
+/* ============ STELLPLÄTZE (OpenStreetMap / Overpass) ============
+   park4night bietet keine öffentliche API und blockiert Browser-Zugriffe (CORS) – deshalb kommen
+   die Daten hier aus OpenStreetMap, das dieselben Kategorien kennt (tourism=caravan_site für
+   Stellplätze/Aires, tourism=camp_site für Campingplätze, amenity=sanitary_dump_station).
+   Zu jedem Treffer gibt es zusätzlich einen Direktlink auf park4night. */
+/* Overpass ist ein kostenloser, oft überlasteter Dienst (HTTP 504 kommt vor).
+   Deshalb der Reihe nach mehrere Spiegelserver versuchen, jeder mit eigenem Zeitlimit. */
+const OVERPASS_MIRRORS=[
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter'
+];
+async function overpass(query, onTry){
+  let lastErr;
+  for(let i=0;i<OVERPASS_MIRRORS.length;i++){
+    if(onTry) onTry(i+1, OVERPASS_MIRRORS.length);
+    const ctl=new AbortController();
+    const timer=setTimeout(()=>ctl.abort(), 20000);
+    try{
+      const r=await fetch(OVERPASS_MIRRORS[i],{method:'POST',body:'data='+encodeURIComponent(query),signal:ctl.signal});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){
+      lastErr = e.name==='AbortError' ? new Error('Zeitüberschreitung') : e;
+    }finally{ clearTimeout(timer); }
+  }
+  throw lastErr || new Error('keine Antwort');
+}
+const SP_KIND={
+  caravan:{label:'Wohnmobil-Stellplatz', col:'#3fb0a0', cls:'a'},
+  camp:   {label:'Campingplatz',         col:'#8bd4ff', cls:''},
+  dump:   {label:'Ver-/Entsorgung',      col:'#e8a33d', cls:'w'}
+};
+const SP_SERVICES=[['power_supply','Strom'],['drinking_water','Trinkwasser'],['sanitary_dump_station','Entsorgung'],
+  ['toilets','WC'],['shower','Dusche'],['internet_access','WLAN'],['washing_machine','Waschmaschine']];
+const yesish = v => v && v!=='no' && v!=='none';
+/* OSM-Daten sind von Freiwilligen frei editierbar → in Attribute nur escapt und nur http(s) einsetzen */
+const escA = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const safeUrl = u => /^https?:\/\//i.test(u||'') ? escA(u) : null;
+const p4nLink  = (lat,lon)=>`https://park4night.com/en/search?lat=${lat}&lng=${lon}`;
+const osmLink  = (t,id)=>`https://www.openstreetmap.org/${t}/${id}`;
+const gmapsDir = (lat,lon)=>`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+
+const spMap=L.map('spmap',{scrollWheelZoom:false}).setView([47.4,6.6],7);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  {maxZoom:19,attribution:'© OpenStreetMap © CARTO'}).addTo(spMap);
+let spLayer=L.layerGroup().addTo(spMap);
+let SPOTS=[], spLoaded=false;
+
+function spKindOf(t){
+  if(t.tourism==='caravan_site') return 'caravan';
+  if(t.tourism==='camp_site') return 'camp';
+  return 'dump';
+}
+/* Für jede Ebene einen eigenen Marker bauen – ein Leaflet-Marker kann nicht in zwei Layern liegen. */
+function spMarker(s){
+  const k=SP_KIND[s.kind], t=s.t;
+  const bits=[k.label];
+  if(t.fee==='no') bits.push('kostenlos');
+  if(t.capacity) bits.push(t.capacity+' Plätze');
+  return L.circleMarker([s.lat,s.lon],{radius:7,color:'#0f1418',weight:1.5,fillColor:k.col,fillOpacity:.9})
+    .bindTooltip(`<b>${esc(t.name||k.label)}</b><br>${esc(bits.join(' · '))}`,{direction:'top',opacity:.96});
+}
+function drawSpots(){
+  spLayer.clearLayers();
+  SPOTS.forEach(s=>spMarker(s).addTo(spLayer));
+  if(SPOTS.length) spMap.fitBounds(L.latLngBounds(SPOTS.map(s=>[s.lat,s.lon])).pad(.2));
+  const cb=document.getElementById('showSpots');
+  if(cb&&cb.checked) drawMap();
+}
+function renderSpots(z){
+  const out=document.getElementById('sp-out');
+  if(!SPOTS.length){
+    out.innerHTML=`<p class="sub">Nichts gefunden. Radius vergrößern, andere Kategorie wählen – oder direkt bei <a href="${p4nLink(z.lat,z.lon)}" target="_blank">park4night</a> nachsehen.</p>`;
+    return;
+  }
+  out.innerHTML=SPOTS.slice(0,60).map(s=>{
+    const t=s.t, k=SP_KIND[s.kind];
+    const svc=SP_SERVICES.filter(([key])=>yesish(t[key])).map(([,lbl])=>lbl);
+    const fee = t.fee==='no' ? 'kostenlos' : (t.charge || t.price || (t.fee==='yes' ? 'kostenpflichtig' : '–'));
+    const site = safeUrl(t.website || t['contact:website']);
+    return `<div class="card"><div class="bd">
+      <h4>${esc(t.name||k.label)}</h4>
+      <div class="tags" style="margin-top:0">
+        <span class="tag ${k.cls}">${k.label}</span>
+        ${t.fee==='no'?'<span class="tag a">gratis</span>':''}
+        ${t.maxheight?`<span class="tag r">max. ${esc(t.maxheight)} m</span>`:''}
+      </div>
+      <div class="kv"><span>Entfernung</span><b>${s.d.toFixed(1)} km von ${esc(z.n)}</b></div>
+      <div class="kv"><span>Preis</span><b>${esc(fee)}</b></div>
+      ${t.capacity?`<div class="kv"><span>Stellplätze</span><b>${esc(t.capacity)}</b></div>`:''}
+      ${t.opening_hours?`<div class="kv"><span>Öffnung</span><b>${esc(t.opening_hours)}</b></div>`:''}
+      ${svc.length?`<div class="kv"><span>Ausstattung</span><b>${svc.join(' · ')}</b></div>`:''}
+      ${(t.phone||t['contact:phone'])?`<div class="kv"><span>Telefon</span><b>${esc(t.phone||t['contact:phone'])}</b></div>`:''}
+      <div class="src" style="margin-top:auto;padding-top:9px;display:flex;gap:11px;flex-wrap:wrap">
+        <a href="${p4nLink(s.lat,s.lon)}" target="_blank">park4night</a>
+        <a href="${gmapsDir(s.lat,s.lon)}" target="_blank">Route</a>
+        <a href="${osmLink(s.otype,s.id)}" target="_blank">OSM</a>
+        ${site?`<a href="${site}" target="_blank" rel="noopener noreferrer">Website</a>`:''}
+      </div>
+    </div></div>`;
+  }).join('');
+}
+async function loadSpots(){
+  const z=byId(document.getElementById('sp-ziel').value);
+  const km=+document.getElementById('sp-radius').value;
+  const out=document.getElementById('sp-out'), st=document.getElementById('sp-stat');
+  const want=[];
+  if(document.getElementById('sp-caravan').checked) want.push('nwr["tourism"="caravan_site"]');
+  if(document.getElementById('sp-camp').checked)    want.push('nwr["tourism"="camp_site"]');
+  if(document.getElementById('sp-dump').checked)    want.push('nwr["amenity"="sanitary_dump_station"]');
+  if(!z){ return; }
+  if(!want.length){ out.innerHTML='<p class="sub">Bitte mindestens eine Kategorie ankreuzen.</p>'; st.textContent=''; return; }
+  st.textContent='Suche läuft …'; out.innerHTML='';
+  const q=`[out:json][timeout:25];(${want.map(w=>`${w}(around:${km*1000},${z.lat},${z.lon});`).join('')});out center tags;`;
+  try{
+    const j=await overpass(q,(n,total)=>{ st.textContent=`Suche läuft … (Server ${n}/${total})`; });
+    SPOTS=(j.elements||[]).map(e=>{
+      const lat = e.lat!==undefined ? e.lat : (e.center&&e.center.lat);
+      const lon = e.lon!==undefined ? e.lon : (e.center&&e.center.lon);
+      if(lat==null||lon==null) return null;
+      const t=e.tags||{};
+      return {id:e.id, otype:e.type, lat, lon, t, kind:spKindOf(t), d:dist({lat,lon},z)};
+    }).filter(Boolean).sort((a,b)=>a.d-b.d);
+    drawSpots(); renderSpots(z);
+    st.textContent=`${SPOTS.length} Treffer im Umkreis von ${km} km um ${z.n}`
+      + (SPOTS.length>60 ? ' · die 60 nächstgelegenen sind unten gelistet' : '');
+  }catch(e){
+    st.textContent='';
+    out.innerHTML=`<p class="sub">Alle OpenStreetMap-Server nicht erreichbar (${esc(e.message)}). Die sind kostenlos und zeitweise überlastet – kurz warten und nochmal „Suchen“ klicken. In der Zwischenzeit direkt bei <a href="${p4nLink(z.lat,z.lon)}" target="_blank">park4night</a> nachsehen.</p>`;
+  }
+}
+document.getElementById('sp-go').onclick=loadSpots;
+document.getElementById('sp-ziel').onchange=loadSpots;
+document.getElementById('sp-radius').onchange=loadSpots;
+['sp-caravan','sp-camp','sp-dump'].forEach(id=>document.getElementById(id).onchange=loadSpots);
+
 /* ============ HAUPTKARTE ============ */
 const BASES={
  'Gelände':['https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png','© OpenTopoMap (CC-BY-SA)',17],
@@ -1299,13 +1486,22 @@ function setBase(name){
   });
   setBase('Gelände');
 })();
-let layer=L.layerGroup().addTo(map), hikeLayer=L.layerGroup();
+let layer=L.layerGroup().addTo(map), hikeLayer=L.layerGroup(), spotLayer=L.layerGroup();
 document.getElementById('showAll').onchange=drawMap;
 document.getElementById('showHikes').onchange=e=>{ e.target.checked?hikeLayer.addTo(map):map.removeLayer(hikeLayer); drawMap(); };
+document.getElementById('showSpots').onchange=e=>{
+  e.target.checked?spotLayer.addTo(map):map.removeLayer(spotLayer);
+  /* Noch nichts gesucht? Dann einmal für das erste Routenziel nachladen. */
+  if(e.target.checked && !spLoaded){ spLoaded=true; loadSpots(); }
+  drawMap();
+};
 
 function drawMap(){
-  layer.clearLayers(); hikeLayer.clearLayers();
+  layer.clearLayers(); hikeLayer.clearLayers(); spotLayer.clearLayers();
   const P=planData(), ids=P.map(p=>p.z.id);
+  if(document.getElementById('showSpots').checked){
+    SPOTS.forEach(s=>spMarker(s).addTo(spotLayer));
+  }
   if(document.getElementById('showAll').checked){
     Z.filter(z=>!ids.includes(z.id)).forEach(z=>{
       L.circleMarker([z.lat,z.lon],{radius:5.5,color:'#22303a',weight:2,fillColor:'#5a6b76',fillOpacity:.9})
