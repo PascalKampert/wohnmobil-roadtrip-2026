@@ -237,7 +237,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
         <option value="25" selected>25 km Umkreis</option>
         <option value="50">50 km Umkreis</option>
       </select>
-      <button class="btn" id="sp-go">Suchen</button>
+      <button class="btn g" id="sp-live" title="Frisch bei OpenStreetMap nachfragen">Live nachladen</button>
       <span id="sp-stat" class="src"></span>
     </div>
     <div class="seg" id="sp-types" style="margin-top:10px">
@@ -849,7 +849,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   /* Overpass erst beim ersten Öffnen des Tabs abfragen, nicht bei jedem Seitenaufruf. */
   if(b.dataset.t==='stellplatz') setTimeout(()=>{
     spMap.invalidateSize();
-    if(!spLoaded){ spLoaded=true; loadSpots(); }
+    if(!spLoaded){ spLoaded=true; loadSpotData(); }
   },60);
 });
 
@@ -1428,7 +1428,8 @@ function renderSpots(z){
     </div></div>`;
   }).join('');
 }
-async function loadSpots(){
+/* Frische Abfrage direkt bei OpenStreetMap – nur auf Knopfdruck, weil der Dienst oft überlastet ist. */
+async function loadSpotsLive(){
   const z=byId(document.getElementById('sp-ziel').value);
   const km=+document.getElementById('sp-radius').value;
   const out=document.getElementById('sp-out'), st=document.getElementById('sp-stat');
@@ -1454,13 +1455,54 @@ async function loadSpots(){
       + (SPOTS.length>60 ? ' · die 60 nächstgelegenen sind unten gelistet' : '');
   }catch(e){
     st.textContent='';
-    out.innerHTML=`<p class="sub">Alle OpenStreetMap-Server nicht erreichbar (${esc(e.message)}). Die sind kostenlos und zeitweise überlastet – kurz warten und nochmal „Suchen“ klicken. In der Zwischenzeit direkt bei <a href="${p4nLink(z.lat,z.lon)}" target="_blank">park4night</a> nachsehen.</p>`;
+    out.innerHTML=`<p class="sub">Alle OpenStreetMap-Server sind gerade nicht erreichbar (${esc(e.message)}). Sie sind kostenlos und zeitweise überlastet. Die gespeicherten Daten stehen weiter zur Verfügung – einfach Ziel oder Umkreis wechseln. Oder direkt bei <a href="${p4nLink(z.lat,z.lon)}" target="_blank">park4night</a> nachsehen.</p>`;
   }
 }
-document.getElementById('sp-go').onclick=loadSpots;
-document.getElementById('sp-ziel').onchange=loadSpots;
-document.getElementById('sp-radius').onchange=loadSpots;
-['sp-caravan','sp-camp','sp-dump'].forEach(id=>document.getElementById(id).onchange=loadSpots);
+
+/* Vorab gespeicherte Stellplatzdaten (stellplaetze.json, einmal offline geholt).
+   Damit ist der Tab sofort da und funktioniert auch, wenn Overpass gerade streikt. */
+let ALL_SPOTS=null, SPOT_DATE='';
+function activeKinds(){
+  const k=[];
+  if(document.getElementById('sp-caravan').checked) k.push('caravan');
+  if(document.getElementById('sp-camp').checked)    k.push('camp');
+  if(document.getElementById('sp-dump').checked)    k.push('dump');
+  return k;
+}
+function applySpotFilter(){
+  const z=byId(document.getElementById('sp-ziel').value);
+  const km=+document.getElementById('sp-radius').value;
+  const kinds=activeKinds();
+  const out=document.getElementById('sp-out'), st=document.getElementById('sp-stat');
+  if(!z||!ALL_SPOTS) return;
+  if(!kinds.length){ SPOTS=[]; drawSpots(); out.innerHTML='<p class="sub">Bitte mindestens eine Kategorie ankreuzen.</p>'; st.textContent=''; return; }
+  SPOTS=ALL_SPOTS.filter(s=>kinds.indexOf(s.kind)>=0)
+    .map(s=>({id:s.id,otype:s.otype,lat:s.lat,lon:s.lon,t:s.t,kind:s.kind,d:dist(s,z)}))
+    .filter(s=>s.d<=km)
+    .sort((a,b)=>a.d-b.d);
+  drawSpots(); renderSpots(z);
+  st.textContent=`${SPOTS.length} Treffer im Umkreis von ${km} km um ${z.n}`
+    + (SPOTS.length>60?' · die 60 nächstgelegenen sind gelistet':'')
+    + (SPOT_DATE?` · Stand ${SPOT_DATE}`:'');
+}
+async function loadSpotData(){
+  const st=document.getElementById('sp-stat');
+  st.textContent='Lade Stellplatzdaten …';
+  try{
+    const r=await fetch('stellplaetze.json',{cache:'no-cache'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    ALL_SPOTS=j.spots||[]; SPOT_DATE=j.generated||'';
+    applySpotFilter();
+  }catch(e){
+    st.textContent='';
+    document.getElementById('sp-out').innerHTML='<p class="sub">Gespeicherte Stellplatzdaten nicht gefunden – bitte „Live nachladen“ benutzen.</p>';
+  }
+}
+document.getElementById('sp-live').onclick=loadSpotsLive;
+document.getElementById('sp-ziel').onchange=applySpotFilter;
+document.getElementById('sp-radius').onchange=applySpotFilter;
+['sp-caravan','sp-camp','sp-dump'].forEach(id=>document.getElementById(id).onchange=applySpotFilter);
 
 /* ============ HAUPTKARTE ============ */
 const BASES={
@@ -1492,7 +1534,7 @@ document.getElementById('showHikes').onchange=e=>{ e.target.checked?hikeLayer.ad
 document.getElementById('showSpots').onchange=e=>{
   e.target.checked?spotLayer.addTo(map):map.removeLayer(spotLayer);
   /* Noch nichts gesucht? Dann einmal für das erste Routenziel nachladen. */
-  if(e.target.checked && !spLoaded){ spLoaded=true; loadSpots(); }
+  if(e.target.checked && !spLoaded){ spLoaded=true; loadSpotData(); }
   drawMap();
 };
 
