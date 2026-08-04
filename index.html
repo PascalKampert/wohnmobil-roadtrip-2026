@@ -909,6 +909,8 @@ function drive(a,b){
 }
 function hhmm(h){ const m=Math.round(h*60); return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')+' h'; }
 const dstr = d => d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'});
+/* Kompaktes Datum für die Kartennadeln – nur Tag.Monat, damit sich die Fähnchen nicht überlappen */
+const dshort = d => d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
 const iso  = d => d.toISOString().slice(0,10);
 const addD = (d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
 const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
@@ -1650,13 +1652,15 @@ function drawMap(){
   P.forEach((p,i)=>{
     const isEnd = i===P.length-1, isStart = i===0;
     const col = isEnd?'#e8a33d':(isStart?'#8bd4ff':'#3fb0a0');
-    L.marker([p.z.lat,p.z.lon],{zIndexOffset:500,icon:L.divIcon({className:'',iconSize:[120,34],iconAnchor:[17,17],
-      html:`<div style="display:flex;align-items:center;gap:5px">
-        <div style="width:32px;height:32px;border-radius:50%;background:${col};color:#08201d;display:grid;place-items:center;font:700 14px sans-serif;border:2.5px solid #0f1418;box-shadow:0 3px 9px rgba(0,0,0,.6);flex:0 0 auto">${i+1}</div>
-        <div style="background:rgba(15,20,24,.88);color:#e8eef2;font:600 11.5px sans-serif;padding:3px 7px;border-radius:6px;white-space:nowrap;border:1px solid #2b3841">${p.z.n}<br><span style="opacity:.65;font-weight:400">${dstr(p.an)}</span></div>
+    /* Nadel zeigt nur Nummer + kurzes Datum. Ortsname und Details kommen beim Überfahren
+       (am Handy beim Antippen) – sonst überlappen sich die Fähnchen im Alpenraum komplett. */
+    L.marker([p.z.lat,p.z.lon],{zIndexOffset:500,icon:L.divIcon({className:'',iconSize:[74,30],iconAnchor:[15,15],
+      html:`<div style="display:flex;align-items:center;gap:4px">
+        <div style="width:30px;height:30px;border-radius:50%;background:${col};color:#08201d;display:grid;place-items:center;font:700 13.5px sans-serif;border:2.5px solid #0f1418;box-shadow:0 3px 9px rgba(0,0,0,.6);flex:0 0 auto">${i+1}</div>
+        <div style="background:rgba(15,20,24,.88);color:#e8eef2;font:600 11px sans-serif;padding:2px 6px;border-radius:5px;white-space:nowrap;border:1px solid #2b3841">${dshort(p.an)}</div>
       </div>`})})
-      .bindTooltip(`<b>${p.z.n}</b><br>Ankunft ${dstr(p.an)}${p.n?`<br>Abfahrt ${dstr(p.ab)} · ${p.n} Nächte`:''}${p.first?'':`<br>Fahrt ${hhmm(p.h)} · ${p.km} km`}`,
-        {direction:'bottom',opacity:.96}).addTo(layer);
+      .bindTooltip(`<b>${esc(p.z.n)}</b><br>Ankunft ${dstr(p.an)}${p.n?`<br>Abfahrt ${dstr(p.ab)} · ${p.n} Nächte`:''}${p.first?'':`<br>Fahrt ${hhmm(p.h)} · ${p.km} km`}`,
+        {direction:'top',opacity:.96}).addTo(layer);
   });
   map.fitBounds(L.latLngBounds(pts).pad(.2));
 }
