@@ -481,6 +481,55 @@ const Z = [
   info:{'Höhe':'1176 m (Dorf) / 1578 m (See)','Camping':'Camping Rendez-vous Kandersteg','Preis/Nacht':'ca. CHF 42','Gondel':'ca. CHF 32 hin/zurück','Bleibedauer':'2 Nächte'},
   more:{'Muss':'Oeschinensee-Rundweg, Gasterntal, Sommerrodelbahn an der Bergstation','Tipp':'Vor 9 Uhr hochfahren – ab 10 Uhr wird es sehr voll und die Gondel staut','Baden':'Oeschinensee ist ganzjährig unter 15 °C, nur für Hartgesottene','Schlechtwetter':'Autoverlad Kandersteg–Goppenstein ins Wallis, Thermalbad Leukerbad','Kinder':'Rodelbahn, Ruderboote auf dem See, flacher Uferweg','Achtung':'Wohnwagen am Camping lassen, Talstations-Parkplatz eng und kostenpflichtig','Wandern':'Rundweg ist alpin – Schwindelfreiheit nötig, Alternative ist der Uferweg'}},
 
+ /* ---------- WEITERE SEEN ----------
+    Koordinaten über Nominatim/OpenStreetMap geprüft. Campingnamen nur dort eingetragen,
+    wo sie in OpenStreetMap bestätigt sind – sonst Verweis auf den Stellplätze-Tab.
+    Wassertemperaturen sind grobe Sommer-Richtwerte, keine Messwerte. */
+ {id:'thunersee', n:'Thunersee / Spiez', land:'CH', kat:'wandern', lat:46.6863, lon:7.6796, wiki:'Thunersee', cq:'Thunersee Spiez', typ:'See',
+  d:'Türkisblauer Voralpensee zwischen Thun und Interlaken, spürbar wärmer als die Bergseen. Schloss Spiez über der Bucht, Rebhänge am Ufer, Dampfschiffe über den ganzen See. Gute Ausweichbasis, wenn Interlaken zu voll ist.',
+  info:{'Höhe':'558 m','Camping':'TCS Camping Thunersee-Gwatt, Manor Farm Gwatt','Baden':'im Hochsommer ca. 20–22 °C','Bleibedauer':'2 Nächte'},
+  more:{'Muss':'Schloss Spiez, St. Beatus-Höhlen, Schiff Thun–Interlaken','Baden':'Strandbad Gwatt, Faulensee, Einigen','Kinder':'Badi Spiez mit Rutsche, Schiffsrundfahrt','Preise':'Aktuelle Plätze und Preise im Tab „Stellplätze“ prüfen'}},
+
+ {id:'brienzersee', n:'Brienzersee / Giessbach', land:'CH', kat:'wandern', lat:46.7554, lon:8.0367, wiki:'Brienzersee', cq:'Brienzersee Giessbach', typ:'See',
+  d:'Der türkisfarbenste See der Schweiz – Gletschermilch der Aare färbt ihn intensiv blaugrün. Die Giessbachfälle stürzen in vierzehn Stufen fast bis ans Ufer und werden abends angestrahlt. Kälter als der Thunersee, dafür ruhiger.',
+  info:{'Höhe':'564 m','Camping':'Camping Aaregg (Brienz), TCS Camping Bönigen-Interlaken','Baden':'kühl, ca. 16–19 °C','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Giessbachfälle mit historischer Standseilbahn, Brienzer Rothorn mit Dampfbahn, Freilichtmuseum Ballenberg','Kinder':'Ballenberg, Schifffahrt','Tipp':'Rothorn-Dampfbahn vorab buchen, Plätze sind begrenzt'}},
+
+ {id:'neuenburgersee', n:'Neuenburgersee', land:'CH', kat:'wandern', lat:46.8978, lon:6.8410, wiki:'Neuenburgersee', cq:'Lac de Neuchatel', typ:'See',
+  d:'Größter vollständig in der Schweiz liegender See, flach und dadurch im Sommer angenehm warm. Weinberge am Nordufer, das Naturschutzgebiet Grande Cariçaie im Süden. Liegt genau zwischen Besançon und dem Berner Oberland.',
+  info:{'Höhe':'429 m','Camping':'Camping de la plage de Boudry','Baden':'flach, im Sommer ca. 22–24 °C','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Altstadt Neuchâtel, Grande Cariçaie, Creux du Van ganz in der Nähe','Baden':'Strände bei Boudry, Yverdon, Estavayer','Tipp':'Lässt sich gut mit dem Creux du Van als Tagesziel verbinden'}},
+
+ {id:'mergozzo', n:'Lago di Mergozzo', land:'IT', kat:'wandern', lat:45.9545, lon:8.4676, wiki:'Lago di Mergozzo', cq:'Lago di Mergozzo', typ:'See',
+  d:'Kleiner Nachbarsee des Lago Maggiore, seit den 1920er Jahren durch Anschwemmung vom großen See getrennt. Motorboote sind verboten, deshalb außergewöhnlich klar, warm und ruhig – deutlich weniger touristisch als Stresa.',
+  info:{'Höhe':'194 m','Camping':'Camping Conca d\'Oro, Camping Orchidea, Camping Isolino','Baden':'sehr sauber, ca. 23–25 °C','Bleibedauer':'2 Nächte'},
+  more:{'Muss':'Dorf Mergozzo mit Uferpromenade, Abstecher zu den Borromäischen Inseln','Tipp':'Motorbootverbot – dadurch einer der saubersten Seen der Region','Kinder':'flacher Einstieg am Dorfstrand'}},
+
+ {id:'gerardmer', n:'Lac de Gérardmer', land:'FR', kat:'wandern', lat:48.0693, lon:6.8531, wiki:'Gérardmer', cq:'Lac de Gerardmer Vosges', typ:'See',
+  d:'Größter natürlicher See der Vogesen, eiszeitlich entstanden und von Tannenwald umschlossen. Liegt direkt an der Route des Crêtes und passt damit perfekt als Badepause auf der Vogesen-Etappe.',
+  info:{'Höhe':'666 m','Camping':'mehrere am Seeufer – im Tab „Stellplätze“ live prüfen','Baden':'im Hochsommer ca. 20–22 °C','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Uferrundweg (ca. 6 km, flach), Tretboote, Route des Crêtes','Kinder':'Strandbad, Tretboote','Tipp':'Im August sehr beliebt – früh anreisen'}},
+
+ {id:'chalain', n:'Lac de Chalain', land:'FR', kat:'wandern', lat:46.6705, lon:5.7925, wiki:'Lac de Chalain', cq:'Lac de Chalain Jura', typ:'See',
+  d:'Türkisgrüner Karstsee im Jura mit hellem Kiesgrund, der ihm eine fast karibische Farbe gibt. Ringsum bewaldete Steilhänge; die prähistorischen Pfahlbauten am Ufer gehören zum UNESCO-Welterbe.',
+  info:{'Höhe':'488 m','Camping':'mehrere direkt am See – im Tab „Stellplätze“ live prüfen','Baden':'sehr gut, ca. 22–24 °C','Bleibedauer':'2 Nächte'},
+  more:{'Muss':'Cascades du Hérisson in der Nähe, Pfahlbau-Museum','Baden':'große Strände am Nord- und Westufer','Tipp':'Liegt günstig auf dem Weg Besançon → Genf'}},
+
+ {id:'vouglans', n:'Lac de Vouglans', land:'FR', kat:'wandern', lat:46.4877, lon:5.6834, wiki:'Lac de Vouglans', cq:'Lac de Vouglans Jura', typ:'See',
+  d:'35 km langer Stausee im Jura, einer der größten Frankreichs, mit auffallend türkiser Farbe und durchgehend bewaldeten Ufern. Ruhiger als die Alpenseen und im Sommer richtig warm.',
+  info:{'Höhe':'429 m','Camping':'mehrere Strandbäder mit Camping – im Tab „Stellplätze“ live prüfen','Baden':'warm, ca. 23–25 °C','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Belvédère du Regardoir, Abtei Baume-les-Messieurs','Baden':'Plage de Bellecin, Plage de Surchauffant','Tipp':'Gute Ausweichoption, wenn es am Chalain voll ist'}},
+
+ {id:'aiguebelette', n:'Lac d\'Aiguebelette', land:'FR', kat:'wandern', lat:45.5575, lon:5.8008, wiki:'Lac d\'Aiguebelette', cq:'Lac Aiguebelette Savoie', typ:'See',
+  d:'Einer der wärmsten Badeseen Frankreichs. Motorboote sind vollständig verboten, dadurch sehr ruhig und klar. Smaragdgrün, eingerahmt vom Chartreuse-Massiv und keine halbe Stunde vom Lac du Bourget entfernt.',
+  info:{'Höhe':'374 m','Camping':'mehrere am Ostufer – im Tab „Stellplätze“ live prüfen','Baden':'sehr warm, bis ca. 26 °C','Bleibedauer':'1–2 Nächte'},
+  more:{'Muss':'Uferweg, olympische Ruderstrecke, zwei unbewohnte Inseln','Tipp':'Motorbootverbot – einer der saubersten Seen der Region','Kinder':'flache Strandbäder mit Liegewiese'}},
+
+ {id:'schluchsee', n:'Schluchsee / Schwarzwald', land:'DE', kat:'wandern', lat:47.8186, lon:8.1770, wiki:'Schluchsee', cq:'Schluchsee Schwarzwald', typ:'See',
+  d:'Größter See des Schwarzwalds auf 930 m, rundum Tannenwald. Deutlich weniger überlaufen als der Titisee und mit langen Uferwegen – ein guter letzter Naturstopp vor der Heimfahrt.',
+  info:{'Höhe':'930 m','Camping':'mehrere am Seeufer – im Tab „Stellplätze“ live prüfen','Baden':'kühl, ca. 18–21 °C','Bleibedauer':'1 Nacht'},
+  more:{'Muss':'Seerundweg (ca. 18 km, auch per Rad), Bootsfahrt, Feldberg in der Nähe','Kinder':'Strandbad Aqua Fun Schluchsee','Tipp':'Ruhigere Alternative zum Titisee, nur rund 15 km entfernt'}},
+
  /* ---------- TESSIN ---------- */
  {id:'verzasca', n:'Verzascatal / Lavertezzo', land:'CH', kat:'natur', lat:46.2578, lon:8.8353, wiki:'Verzasca', cq:'Ponte dei Salti Lavertezzo Verzasca', typ:'Fluss',
   d:'Das türkisgrüne Wasser der Verzasca fließt über weiß polierte Gneisfelsen, überspannt von der doppelbogigen Steinbrücke Ponte dei Salti aus dem 17. Jahrhundert. Landschaftlich der spektakulärste Flusslauf der Alpen und ein völlig anderer Charakter als das Berner Oberland.',
