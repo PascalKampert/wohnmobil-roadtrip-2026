@@ -103,6 +103,41 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
 .seg button.on{background:var(--acc);color:#08201d;font-weight:650}
 .mapctl{position:absolute;z-index:800;top:12px;right:12px;background:rgba(22,29,35,.94);border:1px solid var(--line);border-radius:10px;padding:8px}
 .wrapmap{position:relative}
+
+/* ================= MOBIL =================
+   Ein einziger Block, der die bestehenden Klassen überschreibt – kein anderes Markup,
+   kein eigenes JS. Ziel: nichts quetschen, alles mit dem Daumen bedienbar. */
+@media (max-width:720px){
+  body{font-size:14.5px}
+  header{padding:16px 14px 13px}
+  header h1{font-size:18px;line-height:1.25}
+  header p{font-size:12.4px}
+  /* Statt zwei gequetschter Zeilen: eine seitlich wischbare Leiste */
+  nav{flex-wrap:nowrap;overflow-x:auto;padding:8px 10px;gap:3px;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{flex:0 0 auto;padding:9px 13px;font-size:13.5px}
+  main{padding:14px 12px}
+  h2{font-size:17px} h3{font-size:15px}
+  .box{padding:13px}
+  .grid{grid-template-columns:1fr;gap:12px}
+  /* Karten dürfen nicht den ganzen Bildschirm belegen */
+  #map,#firemap,#spmap{height:58vh;min-height:290px}
+  /* Breite Tabellen seitlich scrollen lassen statt die Spalten zu zerdrücken */
+  table{display:block;overflow-x:auto;white-space:nowrap}
+  /* Daumenfreundliche Bedienelemente */
+  .seqrow{padding:10px;gap:8px}
+  .seqrow button{width:36px;height:36px;font-size:15px}
+  .seqrow input[type=number]{width:60px;padding:6px}
+  .btn{padding:11px 16px}
+  .pick{padding:10px 9px}
+  .seg button{padding:9px 14px}
+  /* Eingebettete Scrollbox nervt am Handy – lieber die Seite scrollen lassen */
+  #picks{max-height:none;overflow:visible}
+  #savedList .seqrow{flex-wrap:wrap}
+  .wx{grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:5px}
+  select,input[type=date],input[type=text]{width:100%}
+  .gal{height:180px}
+}
 </style>
 </head>
 <body>
