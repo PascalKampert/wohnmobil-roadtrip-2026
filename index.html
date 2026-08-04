@@ -125,7 +125,10 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
   /* Breite Tabellen seitlich scrollen lassen statt die Spalten zu zerdrücken */
   table{display:block;overflow-x:auto;white-space:nowrap}
   /* Daumenfreundliche Bedienelemente */
-  .seqrow{padding:10px;gap:8px}
+  /* Umbrechen lassen: Ortsname + Nächte oben, die grösseren Knöpfe notfalls darunter */
+  .seqrow{padding:10px;gap:8px;flex-wrap:wrap}
+  .seqrow b{flex:1 1 auto;min-width:0}
+  .seqrow .g{margin-left:auto}
   .seqrow button{width:36px;height:36px;font-size:15px}
   .seqrow input[type=number]{width:60px;padding:6px}
   .btn{padding:11px 16px}
