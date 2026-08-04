@@ -6,6 +6,11 @@
 <title>Wohnmobil-Roadtrip-Planer 2026</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Vektor-Karten: MapLibre rendert den Hintergrund per GPU (scharfe Beschriftung, weiches Zoomen).
+     Die Brücke maplibre-gl-leaflet lässt alle bestehenden Leaflet-Marker unverändert weiterlaufen. -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"/>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
 <style>
 :root{
   --bg:#0f1418; --bg2:#161d23; --card:#1c252d; --line:#2b3841;
@@ -1464,8 +1469,9 @@ const osmLink  = (t,id)=>`https://www.openstreetmap.org/${t}/${id}`;
 const gmapsDir = (lat,lon)=>`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
 
 const spMap=L.map('spmap',{scrollWheelZoom:false}).setView([47.4,6.6],7);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-  {maxZoom:19,attribution:'© OpenStreetMap © CARTO'}).addTo(spMap);
+/* makeBase() ist eine Funktionsdeklaration weiter unten – wird hochgezogen, daher hier nutzbar. */
+makeBase({vector:'https://tiles.openfreemap.org/styles/liberty',
+          attr:'© OpenFreeMap © OpenMapTiles © OpenStreetMap-Mitwirkende'}).addTo(spMap);
 let spLayer=L.layerGroup().addTo(spMap);
 let SPOTS=[], spLoaded=false;
 
@@ -1562,19 +1568,36 @@ document.getElementById('sp-radius').onchange=loadSpotsLive;
 ['sp-caravan','sp-camp','sp-dump'].forEach(id=>document.getElementById(id).onchange=loadSpotsLive);
 
 /* ============ HAUPTKARTE ============ */
+/* Vektor-Stile (OpenFreeMap, kostenlos und ohne Schlüssel) werden per GPU gezeichnet:
+   scharfe Schrift in jeder Zoomstufe, weiches Zoomen. Gelände und Satellit bleiben Rasterkacheln,
+   weil es dafür keine freie Vektor-Entsprechung gibt. */
+const OFM_ATTR='© <a href="https://openfreemap.org/" target="_blank">OpenFreeMap</a> © OpenMapTiles © OpenStreetMap-Mitwirkende';
 const BASES={
- 'Gelände':['https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png','© OpenTopoMap (CC-BY-SA)',17],
- 'Hell':['https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png','© OpenStreetMap © CARTO',19],
- 'Dunkel':['https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png','© OpenStreetMap © CARTO',19],
- 'Satellit':['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}','© Esri, Maxar, Earthstar Geographics',18]
+ 'Karte':   {vector:'https://tiles.openfreemap.org/styles/liberty',  attr:OFM_ATTR},
+ 'Hell':    {vector:'https://tiles.openfreemap.org/styles/positron', attr:OFM_ATTR},
+ 'Dunkel':  {raster:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr:'© OpenStreetMap © CARTO', maxZoom:19},
+ 'Gelände': {raster:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr:'© OpenTopoMap (CC-BY-SA)', maxZoom:17},
+ 'Satellit':{raster:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr:'© Esri, Maxar, Earthstar Geographics', maxZoom:18}
 };
 const map=L.map('map',{scrollWheelZoom:true,zoomControl:true}).setView([47.6,6.6],6);
 let base=null;
+/* Baut je nach Stil eine Vektor- oder eine Rasterebene. Fällt auf Raster zurück,
+   falls MapLibre nicht geladen werden konnte (z. B. kein Netz). */
+function makeBase(b){
+  if(b.vector && window.L && L.maplibreGL){
+    try{ return L.maplibreGL({style:b.vector, attribution:b.attr}); }catch(e){}
+  }
+  if(b.vector){  // Notnagel, wenn MapLibre fehlt
+    return L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      {maxZoom:19,attribution:'© OpenStreetMap © CARTO'});
+  }
+  return L.tileLayer(b.raster,{maxZoom:b.maxZoom,attribution:b.attr});
+}
 function setBase(name){
   if(base) map.removeLayer(base);
-  const [u,a,mz]=BASES[name];
-  base=L.tileLayer(u,{maxZoom:mz,attribution:a});
-  base.addTo(map); base.bringToBack();
+  base=makeBase(BASES[name]);
+  base.addTo(map);
+  if(base.bringToBack) base.bringToBack();
 }
 (function(){
   const c=document.getElementById('basemaps');
@@ -1583,7 +1606,7 @@ function setBase(name){
     b.onclick=()=>{ c.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); setBase(k); };
     c.appendChild(b);
   });
-  setBase('Gelände');
+  setBase('Karte');
 })();
 let layer=L.layerGroup().addTo(map), hikeLayer=L.layerGroup(), spotLayer=L.layerGroup();
 document.getElementById('showAll').onchange=drawMap;
