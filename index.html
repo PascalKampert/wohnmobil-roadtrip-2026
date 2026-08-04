@@ -38,6 +38,9 @@ nav button{background:transparent;border:1px solid transparent;color:var(--tx2);
 nav button:hover{color:var(--tx);background:#202a32}
 nav button.on{background:var(--acc);color:#08201d;border-color:var(--acc);font-weight:650}
 #navscrim{display:none}
+/* Ziel-Auswahl und Aktionsleiste: am Rechner normale Bestandteile der Seite */
+#picksheet-head{display:none}
+#planbar{display:none}
 main{margin-left:var(--navw);max-width:1240px;padding:calc(var(--hdrh) + 18px) 20px 60px}
 section{display:none} section.on{display:block}
 h2{font-size:19px;margin-bottom:6px}
@@ -163,8 +166,26 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
   .btn{padding:11px 16px}
   .pick{padding:10px 9px}
   .seg button{padding:9px 14px}
-  /* Eingebettete Scrollbox nervt am Handy – lieber die Seite scrollen lassen */
-  #picks{max-height:none;overflow:visible}
+  /* Reiseplan zuerst, Einstellungen darunter – man will unterwegs den Plan sehen, nicht die Regler */
+  .two>*:nth-child(1){order:2}
+  .two>*:nth-child(2){order:1}
+  /* Die lange Zielliste wird zu einem Blatt, das von unten hochfährt */
+  #picksheet{position:fixed;left:0;right:0;bottom:0;max-height:80vh;z-index:1300;
+    background:var(--card);border-top:1px solid var(--line);border-radius:16px 16px 0 0;
+    transform:translateY(101%);transition:transform .25s ease;display:flex;flex-direction:column;
+    box-shadow:0 -8px 30px rgba(0,0,0,.5)}
+  #picksheet.open{transform:none}
+  #picksheet-head{display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  #picksheet-close{background:#2d3b45;border:0;color:var(--tx);width:34px;height:34px;
+    border-radius:8px;font-size:15px;cursor:pointer}
+  #picks{max-height:none;overflow-y:auto;flex:1 1 auto;padding:6px 14px 24px}
+  /* Aktionsleiste unten: Daumen erreicht sie ohne Strecken */
+  #planbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:1000;
+    align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;
+    background:var(--bg2);border-top:1px solid var(--line)}
+  #planbar .btn{white-space:nowrap}
+  #planer{padding-bottom:64px}   /* Platz, damit die Leiste nichts verdeckt */
   #savedList .seqrow{flex-wrap:wrap}
   .wx{grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:5px}
   select,input[type=date]{width:100%}
@@ -364,7 +385,11 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
         </div>
         <div class="src" id="saveMsg" style="margin-top:7px"></div>
       </div>
-      <div id="picks" style="max-height:440px;overflow:auto"></div>
+      <!-- Am Rechner Teil der linken Spalte, am Handy ein Blatt, das von unten hochfährt -->
+      <div id="picksheet">
+        <div id="picksheet-head"><b>Ziele wählen</b><button id="picksheet-close" aria-label="Schließen">✕</button></div>
+        <div id="picks" style="max-height:440px;overflow:auto"></div>
+      </div>
     </div>
     <div>
       <div class="box">
@@ -377,6 +402,12 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
         <div id="plan-sum" style="margin-top:12px"></div>
       </div>
     </div>
+  </div>
+
+  <!-- Feste Aktionsleiste am unteren Bildschirmrand, nur am Handy sichtbar -->
+  <div id="planbar">
+    <span id="planbar-sum" class="src"></span>
+    <button class="btn" id="planbar-add">Ziele wählen</button>
   </div>
 </section>
 
@@ -965,8 +996,16 @@ const closeNav=()=>{ navEl.classList.remove('open'); navScrim.classList.remove('
 document.getElementById('navtoggle').onclick=()=>{
   navEl.classList.toggle('open'); navScrim.classList.toggle('on');
 };
-navScrim.onclick=closeNav;
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeNav(); });
+/* Ziel-Auswahlblatt (nur am Handy sichtbar, am Rechner steht die Liste normal in der Spalte) */
+const pickSheet=document.getElementById('picksheet');
+const closeSheet=()=>{ pickSheet.classList.remove('open'); navScrim.classList.remove('on'); };
+document.getElementById('planbar-add').onclick=()=>{
+  pickSheet.classList.add('open'); navScrim.classList.add('on');
+};
+document.getElementById('picksheet-close').onclick=closeSheet;
+
+navScrim.onclick=()=>{ closeNav(); closeSheet(); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeNav(); closeSheet(); } });
 
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
@@ -1130,12 +1169,20 @@ function renderRouteBtns(){
     rb.appendChild(b);
   });
 }
+/* Kurzstand für die Aktionsleiste am unteren Rand */
+function updatePlanbar(){
+  const el=document.getElementById('planbar-sum');
+  if(!el) return;
+  const nights=TOUR.reduce((s,t)=>s+(+t.nights||0),0);
+  el.textContent = TOUR.length ? `${TOUR.length} Stopps · ${nights} Nächte` : 'Noch nichts gewählt';
+}
 function renderSeq(){
   const s=document.getElementById('seq');
   saveActive();
+  updatePlanbar();
   if(document.getElementById('wx-ziel')) renderWxSelect();
   if(document.getElementById('sp-ziel')) renderSpSelect();
-  if(!TOUR.length){ s.innerHTML='<p class="sub">Noch keine Ziele gewählt. „Empfehlung laden“ liefert einen fertigen Vorschlag mit Ziel Aachen.</p>'; renderPlan(); drawMap(); return; }
+  if(!TOUR.length){ s.innerHTML='<p class="sub">Noch keine Ziele gewählt – unten auf „Ziele wählen“ tippen oder eine gespeicherte Route laden.</p>'; renderPlan(); drawMap(); return; }
   s.innerHTML=TOUR.map((t,i)=>{
     const z=byId(t.id);
     return `<div class="seqrow"><span class="n">${i+1}</span><b>${z.n}</b>
