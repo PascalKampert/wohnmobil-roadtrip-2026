@@ -23,6 +23,7 @@ a{color:var(--acc)}
 header{padding:26px 22px 18px;background:linear-gradient(160deg,#1b2b30,#0f1418);border-bottom:1px solid var(--line)}
 header h1{font-size:23px;letter-spacing:-.4px}
 header p{color:var(--tx2);font-size:13.5px;margin-top:5px}
+.hdr-short{display:none}   /* am Handy per Media-Query eingeblendet, dafür .hdr-full aus */
 nav{display:flex;gap:4px;flex-wrap:wrap;padding:12px 18px;background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:900}
 nav button{background:transparent;border:1px solid transparent;color:var(--tx2);padding:8px 14px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500}
 nav button:hover{color:var(--tx);background:#202a32}
@@ -127,8 +128,21 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
   .grid{grid-template-columns:1fr;gap:12px}
   /* Karten dürfen nicht den ganzen Bildschirm belegen */
   #map,#firemap,#spmap{height:58vh;min-height:290px}
+  /* Kopfzeile ausblenden, volle Route nur am Rechner */
+  .hdr-full{display:none}
+  .hdr-short{display:inline}
   /* Breite Tabellen seitlich scrollen lassen statt die Spalten zu zerdrücken */
   table{display:block;overflow-x:auto;white-space:nowrap}
+  /* Die beiden Reiseplan-Tabellen werden stattdessen zu Karten: eine Zeile pro Etappe,
+     Spaltenname links, Wert rechts. Kein seitliches Wischen, alles auf einen Blick. */
+  table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:auto}
+  table.stack{overflow:visible;white-space:normal}
+  table.stack tr:first-child{display:none}
+  table.stack tr{background:#212b33;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px}
+  table.stack td{border:0;padding:3px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.2px}
+  table.stack td::before{content:attr(data-l);color:var(--tx2);font-size:12px;flex:0 0 auto}
+  table.stack td[data-l="#"]{display:none}
+  table.stack td b{font-size:14.5px}
   /* Daumenfreundliche Bedienelemente */
   /* Umbrechen lassen: Ortsname + Nächte oben, die grösseren Knöpfe notfalls darunter */
   .seqrow{padding:10px;gap:8px;flex-wrap:wrap}
@@ -217,7 +231,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
       <select id="rec-pick"></select>
       <button class="btn g" id="rec-open">Im Tourenplaner öffnen</button>
     </div>
-    <table id="t-master"></table>
+    <table id="t-master" class="stack"></table>
     <div id="rec-sum" style="margin-top:12px"></div>
     <div class="note">Ziel ist immer Aachen, nicht Gießen – deshalb läuft der Rückweg über Elsass/Lothringen, Mosel und Eifel statt über die A5. Trips sind auf max. 14 Tage ausgelegt.</div>
   </div>
@@ -350,7 +364,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
       </div>
       <div class="box">
         <h3 style="margin-top:0">3 · Reiseplan</h3>
-        <table id="t-plan"></table>
+        <table id="t-plan" class="stack"></table>
         <div id="plan-sum" style="margin-top:12px"></div>
       </div>
     </div>
@@ -980,8 +994,8 @@ function renderRecommendation(){
   let rows='<tr><th>#</th><th>Etappe</th><th>Ankunft</th><th>Abfahrt</th><th>Nächte</th><th>Fahrt ab Vorort</th><th>km</th></tr>';
   P.forEach((p,i)=>{
     const cls=p.h>4?'bad':(p.h>3?'warn':'ok');
-    rows+=`<tr><td>${i+1}</td><td><b>${p.z.n}</b></td><td>${dstr(p.an)}</td><td>${p.n?dstr(p.ab):'–'}</td><td>${p.n||'–'}</td>
-      <td>${p.first?'Start':`<span class="pill ${cls}">${hhmm(p.h)}</span>`}</td><td>${p.first?'–':p.km+' km'}</td></tr>`;
+    rows+=`<tr><td data-l="#">${i+1}</td><td data-l="Etappe"><b>${p.z.n}</b></td><td data-l="Ankunft">${dstr(p.an)}</td><td data-l="Abfahrt">${p.n?dstr(p.ab):'–'}</td><td data-l="Nächte">${p.n||'–'}</td>
+      <td data-l="Fahrt">${p.first?'Start':`<span class="pill ${cls}">${hhmm(p.h)}</span>`}</td><td data-l="km">${p.first?'–':p.km+' km'}</td></tr>`;
   });
   t.innerHTML=rows;
   const nights=P.reduce((s,p)=>s+p.n,0), totKm=P.reduce((s,p)=>s+p.km,0);
@@ -1141,7 +1155,11 @@ function updateHeader(P){
   const nights=P.reduce((s,p)=>s+p.n,0);
   const start=dstr(P[0].an);
   const last=P[P.length-1], ende=last.n?last.ab:last.an;
-  h.textContent=`Aktive Route: ${P.map(p=>p.z.n).join(' → ')} · ${nights} Nächte · Start ${start}`;
+  /* Zwei Fassungen: die volle Kette am Rechner, eine kurze am Handy (CSS blendet um).
+     Die lange Kette hat auf dem Telefon sonst acht Zeilen gefressen. */
+  h.innerHTML =
+    `<span class="hdr-full">Aktive Route: ${esc(P.map(p=>p.z.n).join(' → '))} · ${nights} Nächte · Start ${start}</span>`+
+    `<span class="hdr-short">${esc(P[0].z.n)} → … → ${esc(last.z.n)} · ${P.length} Stopps · ${nights} Nächte · ab ${dshort(P[0].an)}</span>`;
   if(d) d.textContent=`Aktuelle Planung: ${start} bis ${dstr(ende)} · ${nights} Nächte`;
 }
 function renderPlan(){
@@ -1151,8 +1169,8 @@ function renderPlan(){
   let h='<tr><th>#</th><th>Ort</th><th>Ankunft</th><th>Abfahrt</th><th>Nächte</th><th>Fahrt</th><th>km</th></tr>';
   P.forEach((p,i)=>{
     const cls=p.h>4?'bad':(p.h>3?'warn':'ok');
-    h+=`<tr><td>${i+1}</td><td><b>${p.z.n}</b></td><td>${dstr(p.an)}</td><td>${p.n?dstr(p.ab):'–'}</td>
-      <td>${p.n||'–'}</td><td>${p.first?'Start':`<span class="pill ${cls}">${hhmm(p.h)}</span>`}</td><td>${p.first?'–':p.km}</td></tr>`;
+    h+=`<tr><td data-l="#">${i+1}</td><td data-l="Ort"><b>${p.z.n}</b></td><td data-l="Ankunft">${dstr(p.an)}</td><td data-l="Abfahrt">${p.n?dstr(p.ab):'–'}</td>
+      <td data-l="Nächte">${p.n||'–'}</td><td data-l="Fahrt">${p.first?'Start':`<span class="pill ${cls}">${hhmm(p.h)}</span>`}</td><td data-l="km">${p.first?'–':p.km}</td></tr>`;
   });
   t.innerHTML=h;
   const totKm=P.reduce((s,p)=>s+p.km,0), totH=P.reduce((s,p)=>s+p.h,0), nights=P.reduce((s,p)=>s+p.n,0);
@@ -1666,25 +1684,27 @@ function drawMap(){
 }
 
 /* ============ INIT ============ */
-/* Standard-Route für jeden neuen Besucher (noch nie etwas gespeichert): die eigene "Erste Idee".
-   Wird einmalig als gespeicherte Route angelegt, damit sie überall konsistent auftaucht –
-   als aktive Route, unter "Eigene gespeicherte Routen" und als Empfehlung. */
-const DEFAULT_ROUTE_NAME='Erste Idee';
+/* Aktuelle Standardroute (Stand 04.08.) – sie ist die aktive Route, taucht unter
+   "Eigene gespeicherte Routen" auf und ist als Empfehlung vorausgewählt. */
+const DEFAULT_ROUTE_NAME='Route Stand 04.08';
 const DEFAULT_ROUTE={start:'2026-08-02', alp:true, stops:[
-  {id:'giessen',n:0},{id:'strassburg',n:2},{id:'colmar',n:2},{id:'besancon',n:1},
+  {id:'giessen',n:0},{id:'strassburg',n:1},{id:'colmar',n:3},{id:'besancon',n:1},
   {id:'genf',n:2},{id:'kandersteg',n:2},{id:'luzern',n:1},{id:'lagomaggiore',n:2},
-  {id:'locarno',n:1},{id:'titisee',n:1},{id:'aachen',n:0}]};
-/* Einmaliger harter Reset: jeder alte Test-/Zwischenstand (egal welcher Browser) wird auf diesem
-   Deploy einmal gelöscht und durch ausschließlich "Erste Idee" ersetzt. RESET_TAG hochzählen,
-   falls nochmal ein harter Reset nötig ist. */
-const RESET_TAG='2026-07-27-erste-idee-only';
-(function hardResetOnce(){
-  if(localStorage.getItem('caravan2026.reset')===RESET_TAG) return;
-  Object.keys(localStorage).filter(k=>k.startsWith('caravan2026.')).forEach(k=>localStorage.removeItem(k));
-  const st={}; st[DEFAULT_ROUTE_NAME]={...DEFAULT_ROUTE, saved:new Date().toISOString()};
-  localStorage.setItem(LSKEY, JSON.stringify(st));
-  localStorage.setItem(ACTIVEKEY, JSON.stringify(DEFAULT_ROUTE));
-  localStorage.setItem('caravan2026.reset', RESET_TAG);
+  {id:'locarno',n:1},{id:'titisee',n:1},{id:'luxemburg',n:2},{id:'aachen',n:0}]};
+/* Einmalige Übernahme pro Browser, NICHT zerstörend: die Standardroute wird angelegt bzw.
+   aktualisiert und aktiv gesetzt. Alle selbst gespeicherten Routen bleiben erhalten.
+   SEED_TAG hochzählen, wenn eine neue Standardroute ausgerollt werden soll. */
+const SEED_TAG='2026-08-04-route-stand-0408';
+(function seedDefaultOnce(){
+  if(localStorage.getItem('caravan2026.seed')===SEED_TAG) return;
+  try{
+    const st=store();
+    st[DEFAULT_ROUTE_NAME]={...DEFAULT_ROUTE, saved:new Date().toISOString()};
+    localStorage.setItem(LSKEY, JSON.stringify(st));
+    localStorage.setItem(ACTIVEKEY, JSON.stringify(DEFAULT_ROUTE));
+    localStorage.setItem(RECKEY, 'saved:'+DEFAULT_ROUTE_NAME);
+    localStorage.setItem('caravan2026.seed', SEED_TAG);
+  }catch(e){}
 })();
 renderSaved();            // füllt Fertige-Routenvorschläge-Knöpfe + Empfehlung (rec-pick) aus dem Gespeicherten
 /* Live wiederherstellen: zuletzt bearbeiteter Stand → sonst erste eigene gespeicherte Route → sonst "Erste Idee". */
