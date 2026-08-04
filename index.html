@@ -16,19 +16,29 @@
   --bg:#0f1418; --bg2:#161d23; --card:#1c252d; --line:#2b3841;
   --tx:#e8eef2; --tx2:#9fb0bc; --acc:#3fb0a0; --acc2:#e8a33d; --red:#d9534f;
   --rad:14px;
+  --navw:196px; --hdrh:50px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:0 0 60px}
 a{color:var(--acc)}
-header{padding:26px 22px 18px;background:linear-gradient(160deg,#1b2b30,#0f1418);border-bottom:1px solid var(--line)}
-header h1{font-size:23px;letter-spacing:-.4px}
-header p{color:var(--tx2);font-size:13.5px;margin-top:5px}
-.hdr-short{display:none}   /* am Handy per Media-Query eingeblendet, dafür .hdr-full aus */
-nav{display:flex;gap:4px;flex-wrap:wrap;padding:12px 18px;background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:900}
-nav button{background:transparent;border:1px solid transparent;color:var(--tx2);padding:8px 14px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500}
+/* Schmale Titelleiste oben, Navigation als Seitenleiste links.
+   Kein seitliches Wischen mehr – am Handy fährt die Leiste als Schublade ein. */
+header{position:fixed;top:0;left:0;right:0;height:var(--hdrh);z-index:1000;
+  display:flex;align-items:center;gap:10px;padding:0 16px;
+  background:var(--bg2);border-bottom:1px solid var(--line)}
+header h1{font-size:16px;letter-spacing:-.2px;white-space:nowrap;font-weight:650}
+#navtoggle{display:none;background:transparent;border:0;color:var(--tx);font-size:20px;
+  cursor:pointer;padding:6px 8px;line-height:1;border-radius:8px}
+#navtoggle:hover{background:#202a32}
+nav{position:fixed;top:var(--hdrh);left:0;bottom:0;width:var(--navw);z-index:900;
+  display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:12px 10px;
+  background:var(--bg2);border-right:1px solid var(--line);overflow-y:auto}
+nav button{background:transparent;border:1px solid transparent;color:var(--tx2);padding:10px 13px;
+  border-radius:9px;cursor:pointer;font-size:14px;font-weight:500;text-align:left}
 nav button:hover{color:var(--tx);background:#202a32}
 nav button.on{background:var(--acc);color:#08201d;border-color:var(--acc);font-weight:650}
-main{padding:22px 18px;max-width:1320px;margin:0 auto}
+#navscrim{display:none}
+main{margin-left:var(--navw);max-width:1240px;padding:calc(var(--hdrh) + 18px) 20px 60px}
 section{display:none} section.on{display:block}
 h2{font-size:19px;margin-bottom:6px}
 h3{font-size:16px;margin:22px 0 8px}
@@ -115,22 +125,22 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
    kein eigenes JS. Ziel: nichts quetschen, alles mit dem Daumen bedienbar. */
 @media (max-width:720px){
   body{font-size:14.5px}
-  header{padding:16px 14px 13px}
-  header h1{font-size:18px;line-height:1.25}
-  header p{font-size:12.4px}
-  /* Statt zwei gequetschter Zeilen: eine seitlich wischbare Leiste */
-  nav{flex-wrap:nowrap;overflow-x:auto;padding:8px 10px;gap:3px;scrollbar-width:none}
-  nav::-webkit-scrollbar{display:none}
-  nav button{flex:0 0 auto;padding:9px 13px;font-size:13.5px}
-  main{padding:14px 12px}
+  header h1{font-size:15px}
+  #navtoggle{display:block}
+  /* Navigation als Schublade – kein seitliches Wischen der Leiste mehr */
+  nav{top:0;width:240px;padding-top:calc(var(--hdrh) + 10px);z-index:1200;
+      transform:translateX(-100%);transition:transform .22s ease;box-shadow:0 0 30px rgba(0,0,0,.55)}
+  nav.open{transform:none}
+  nav button{padding:12px 14px;font-size:15px}
+  #navscrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;
+            opacity:0;pointer-events:none;transition:opacity .22s}
+  #navscrim.on{opacity:1;pointer-events:auto}
+  main{margin-left:0;padding:calc(var(--hdrh) + 14px) 12px 70px}
   h2{font-size:17px} h3{font-size:15px}
   .box{padding:13px}
   .grid{grid-template-columns:1fr;gap:12px}
   /* Karten dürfen nicht den ganzen Bildschirm belegen */
   #map,#firemap,#spmap{height:58vh;min-height:290px}
-  /* Kopfzeile ausblenden, volle Route nur am Rechner */
-  .hdr-full{display:none}
-  .hdr-short{display:inline}
   /* Breite Tabellen seitlich scrollen lassen statt die Spalten zu zerdrücken */
   table{display:block;overflow-x:auto;white-space:nowrap}
   /* Die beiden Reiseplan-Tabellen werden stattdessen zu Karten: eine Zeile pro Etappe,
@@ -201,12 +211,11 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
 </script>
 
 <header>
-  <h1>Wohnmobil-Roadtrip-Planer 2026</h1>
-  <p>Rhythmus: max. 3–4 h Fahrt, danach mindestens 2 Nächte Standzeit · Trips bis max. 14 Tage · Planungsstand 26.07.2026</p>
-  <p id="hdr-route" class="sub" style="margin-top:6px;color:var(--acc);font-weight:600"></p>
+  <button id="navtoggle" aria-label="Menü öffnen">☰</button>
+  <h1>Roadtrip 2026</h1>
 </header>
 
-<nav>
+<nav id="nav">
   <button class="on" data-t="ueber">Übersicht</button>
   <button data-t="ziele">Ziele</button>
   <button data-t="wandern">Wanderungen</button>
@@ -215,13 +224,13 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
   <button data-t="wetter">Wetter &amp; Waldbrand</button>
   <button data-t="karte">Karte</button>
 </nav>
+<div id="navscrim"></div>
 
 <main>
 
 <!-- ÜBERSICHT -->
 <section id="ueber" class="on">
-  <h2>Übersicht &amp; Fahrlogik</h2>
-  <p class="sub">Fahrzeiten sind für ein Gespann mit ca. 65 km/h Reisedurchschnitt gerechnet (Luftlinie × 1,35 Umwegfaktor ÷ 65). Vor Abfahrt gegen Google Maps oder ADAC Maps gegenprüfen.</p>
+  <h2>Übersicht</h2>
   <p id="ueber-dates" class="sub" style="color:var(--acc);font-weight:600"></p>
 
   <div class="box">
@@ -950,11 +959,20 @@ function mountGallery(el){
 }
 function fillPics(root){ root.querySelectorAll('.gal[data-id]').forEach(mountGallery); }
 
-/* ============ TABS ============ */
+/* ============ TABS + SEITENLEISTE ============ */
+const navEl=document.getElementById('nav'), navScrim=document.getElementById('navscrim');
+const closeNav=()=>{ navEl.classList.remove('open'); navScrim.classList.remove('on'); };
+document.getElementById('navtoggle').onclick=()=>{
+  navEl.classList.toggle('open'); navScrim.classList.toggle('on');
+};
+navScrim.onclick=closeNav;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeNav(); });
+
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');
+  closeNav();                       // am Handy die Schublade nach der Auswahl schliessen
   document.getElementById(b.dataset.t).classList.add('on');
   if(b.dataset.t==='karte') setTimeout(()=>{map.invalidateSize(); drawMap();},60);
   if(b.dataset.t==='wetter') setTimeout(()=>fmap.invalidateSize(),60);
@@ -1149,18 +1167,15 @@ function planDataFor(stops,startVal){
 function planData(){
   return planDataFor(TOUR, document.getElementById('startdate').value);
 }
+/* Die Titelleiste trägt keine Routeninfos mehr – der Kurzüberblick steht im Übersicht-Tab. */
 function updateHeader(P){
-  const h=document.getElementById('hdr-route'), d=document.getElementById('ueber-dates');
-  if(!P||!P.length){ h.textContent=''; if(d)d.textContent=''; return; }
+  const d=document.getElementById('ueber-dates');
+  if(!d) return;
+  if(!P||!P.length){ d.textContent=''; return; }
   const nights=P.reduce((s,p)=>s+p.n,0);
-  const start=dstr(P[0].an);
   const last=P[P.length-1], ende=last.n?last.ab:last.an;
-  /* Zwei Fassungen: die volle Kette am Rechner, eine kurze am Handy (CSS blendet um).
-     Die lange Kette hat auf dem Telefon sonst acht Zeilen gefressen. */
-  h.innerHTML =
-    `<span class="hdr-full">Aktive Route: ${esc(P.map(p=>p.z.n).join(' → '))} · ${nights} Nächte · Start ${start}</span>`+
-    `<span class="hdr-short">${esc(P[0].z.n)} → … → ${esc(last.z.n)} · ${P.length} Stopps · ${nights} Nächte · ab ${dshort(P[0].an)}</span>`;
-  if(d) d.textContent=`Aktuelle Planung: ${start} bis ${dstr(ende)} · ${nights} Nächte`;
+  d.textContent=`${esc(P[0].z.n)} → … → ${esc(last.z.n)} · ${P.length} Stopps · ${nights} Nächte · `
+              + `${dstr(P[0].an)} bis ${dstr(ende)}`;
 }
 function renderPlan(){
   const P=planData(), t=document.getElementById('t-plan');
