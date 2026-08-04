@@ -1332,8 +1332,10 @@ document.getElementById('b-fire-refresh').onclick=loadFire;
    Zu jedem Treffer gibt es zusätzlich einen Direktlink auf park4night. */
 /* Overpass ist ein kostenloser, oft überlasteter Dienst (HTTP 504 kommt vor).
    Deshalb der Reihe nach mehrere Spiegelserver versuchen, jeder mit eigenem Zeitlimit. */
+/* NUR weltweite Server verwenden. Regionale Extrakte (z. B. overpass.osm.ch) liefern
+   ausserhalb ihres Gebiets still "0 Treffer" statt einer Fehlermeldung – das sieht dann
+   aus, als gäbe es dort keine Campingplätze. */
 const OVERPASS_MIRRORS=[
-  'https://overpass.osm.ch/api/interpreter',      // Schweizer Server, für diese Route am schnellsten
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter'
 ];
