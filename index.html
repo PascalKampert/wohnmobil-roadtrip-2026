@@ -237,7 +237,7 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
         <option value="25" selected>25 km Umkreis</option>
         <option value="50">50 km Umkreis</option>
       </select>
-      <button class="btn g" id="sp-live" title="Frisch bei OpenStreetMap nachfragen">Live nachladen</button>
+      <button class="btn g" id="sp-live" title="Frisch bei OpenStreetMap nachfragen">Neu suchen</button>
       <span id="sp-stat" class="src"></span>
     </div>
     <div class="seg" id="sp-types" style="margin-top:10px">
@@ -849,7 +849,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   /* Overpass erst beim ersten Öffnen des Tabs abfragen, nicht bei jedem Seitenaufruf. */
   if(b.dataset.t==='stellplatz') setTimeout(()=>{
     spMap.invalidateSize();
-    if(!spLoaded){ spLoaded=true; loadSpotData(); }
+    if(!spLoaded){ spLoaded=true; loadSpotsLive(); }
   },60);
 });
 
@@ -1333,9 +1333,9 @@ document.getElementById('b-fire-refresh').onclick=loadFire;
 /* Overpass ist ein kostenloser, oft überlasteter Dienst (HTTP 504 kommt vor).
    Deshalb der Reihe nach mehrere Spiegelserver versuchen, jeder mit eigenem Zeitlimit. */
 const OVERPASS_MIRRORS=[
-  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.osm.ch/api/interpreter',      // Schweizer Server, für diese Route am schnellsten
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter'
+  'https://overpass.kumi.systems/api/interpreter'
 ];
 async function overpass(query, onTry){
   let lastErr;
@@ -1344,7 +1344,9 @@ async function overpass(query, onTry){
     const ctl=new AbortController();
     const timer=setTimeout(()=>ctl.abort(), 20000);
     try{
-      const r=await fetch(OVERPASS_MIRRORS[i],{method:'POST',body:'data='+encodeURIComponent(query),signal:ctl.signal});
+      const r=await fetch(OVERPASS_MIRRORS[i],{method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'data='+encodeURIComponent(query),signal:ctl.signal});
       if(!r.ok) throw new Error('HTTP '+r.status);
       return await r.json();
     }catch(e){
@@ -1459,50 +1461,12 @@ async function loadSpotsLive(){
   }
 }
 
-/* Vorab gespeicherte Stellplatzdaten (stellplaetze.json, einmal offline geholt).
-   Damit ist der Tab sofort da und funktioniert auch, wenn Overpass gerade streikt. */
-let ALL_SPOTS=null, SPOT_DATE='';
-function activeKinds(){
-  const k=[];
-  if(document.getElementById('sp-caravan').checked) k.push('caravan');
-  if(document.getElementById('sp-camp').checked)    k.push('camp');
-  if(document.getElementById('sp-dump').checked)    k.push('dump');
-  return k;
-}
-function applySpotFilter(){
-  const z=byId(document.getElementById('sp-ziel').value);
-  const km=+document.getElementById('sp-radius').value;
-  const kinds=activeKinds();
-  const out=document.getElementById('sp-out'), st=document.getElementById('sp-stat');
-  if(!z||!ALL_SPOTS) return;
-  if(!kinds.length){ SPOTS=[]; drawSpots(); out.innerHTML='<p class="sub">Bitte mindestens eine Kategorie ankreuzen.</p>'; st.textContent=''; return; }
-  SPOTS=ALL_SPOTS.filter(s=>kinds.indexOf(s.kind)>=0)
-    .map(s=>({id:s.id,otype:s.otype,lat:s.lat,lon:s.lon,t:s.t,kind:s.kind,d:dist(s,z)}))
-    .filter(s=>s.d<=km)
-    .sort((a,b)=>a.d-b.d);
-  drawSpots(); renderSpots(z);
-  st.textContent=`${SPOTS.length} Treffer im Umkreis von ${km} km um ${z.n}`
-    + (SPOTS.length>60?' · die 60 nächstgelegenen sind gelistet':'')
-    + (SPOT_DATE?` · Stand ${SPOT_DATE}`:'');
-}
-async function loadSpotData(){
-  const st=document.getElementById('sp-stat');
-  st.textContent='Lade Stellplatzdaten …';
-  try{
-    const r=await fetch('stellplaetze.json',{cache:'no-cache'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    ALL_SPOTS=j.spots||[]; SPOT_DATE=j.generated||'';
-    applySpotFilter();
-  }catch(e){
-    st.textContent='';
-    document.getElementById('sp-out').innerHTML='<p class="sub">Gespeicherte Stellplatzdaten nicht gefunden – bitte „Live nachladen“ benutzen.</p>';
-  }
-}
+/* Es wird immer nur der EINE ausgewählte Ort abgefragt – das dauert rund eine Sekunde.
+   (Alle Orte auf einmal zu holen war zu langsam und hat die Server überlastet.) */
 document.getElementById('sp-live').onclick=loadSpotsLive;
-document.getElementById('sp-ziel').onchange=applySpotFilter;
-document.getElementById('sp-radius').onchange=applySpotFilter;
-['sp-caravan','sp-camp','sp-dump'].forEach(id=>document.getElementById(id).onchange=applySpotFilter);
+document.getElementById('sp-ziel').onchange=loadSpotsLive;
+document.getElementById('sp-radius').onchange=loadSpotsLive;
+['sp-caravan','sp-camp','sp-dump'].forEach(id=>document.getElementById(id).onchange=loadSpotsLive);
 
 /* ============ HAUPTKARTE ============ */
 const BASES={
@@ -1534,7 +1498,7 @@ document.getElementById('showHikes').onchange=e=>{ e.target.checked?hikeLayer.ad
 document.getElementById('showSpots').onchange=e=>{
   e.target.checked?spotLayer.addTo(map):map.removeLayer(spotLayer);
   /* Noch nichts gesucht? Dann einmal für das erste Routenziel nachladen. */
-  if(e.target.checked && !spLoaded){ spLoaded=true; loadSpotData(); }
+  if(e.target.checked && !spLoaded){ spLoaded=true; loadSpotsLive(); }
   drawMap();
 };
 
