@@ -135,7 +135,11 @@ select,input[type=date],input[type=number]{background:#212b33;color:var(--tx);bo
   #picks{max-height:none;overflow:visible}
   #savedList .seqrow{flex-wrap:wrap}
   .wx{grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:5px}
-  select,input[type=date],input[type=text]{width:100%}
+  select,input[type=date]{width:100%}
+  /* Grid- und Flex-Kinder dürfen standardmässig nicht unter ihre Inhaltsbreite schrumpfen
+     (min-width:auto) – ohne das sprengt das Namensfeld die ganze Planer-Spalte. */
+  .two,.two>*,.box,.seqrow{min-width:0}
+  #saveName{flex:1 1 0;min-width:0;width:auto}
   .gal{height:180px}
 }
 </style>
